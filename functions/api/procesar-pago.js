@@ -2,10 +2,24 @@ export async function onRequestPost(context) {
   const { request, env } = context;
   
   try {
+    // Verificar que request existe
+    if (!request) {
+      throw new Error('Request is undefined');
+    }
+    
     const body = await request.json();
     const { rifaId, tickets, nombre, telefono, email, metodoPago, comprobante, total } = body;
 
-    console.log('Datos recibidos:', { rifaId, tickets, nombre, telefono, metodoPago, total });
+    // Verificar datos mínimos requeridos
+    if (!tickets || !nombre || !telefono) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Faltan datos requeridos: tickets, nombre o teléfono'
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
     const db = env.DB;
 
@@ -30,36 +44,23 @@ export async function onRequestPost(context) {
       `INSERT INTO ordenes (ticket_id, cliente_nombre, cliente_telefono, cliente_email, rifa_id, estado)
        VALUES (?, ?, ?, ?, ?, 'pendiente')`
     ).bind(
-      tickets.join(','),  // ticket_id
+      tickets.join(','),
       nombre, 
       telefono, 
       email || '', 
-      parseInt(rifaId)     // rifa_id
+      parseInt(rifaId) || 140  // Valor por defecto si es necesario
     ).run();
 
-    // Obtener el ID generado automáticamente
     const ordenId = orden.meta.last_row_id;
-    console.log('Orden ID generado:', ordenId);
 
-    // ✅ VERIFICAR que la orden se creó
-    const ordenCreada = await db.prepare('SELECT * FROM ordenes WHERE id = ?').bind(ordenId).first();
-    console.log('Orden creada:', ordenCreada);
-
-    if (!ordenCreada) {
-      throw new Error('No se pudo crear la orden en la base de datos');
-    }
-
-    // Actualizar los tickets
+    // Actualizar tickets
     await db.prepare(
       `UPDATE tickets SET vendido = 1, order_id = ? WHERE numero IN (${placeholders})`
     ).bind(ordenId, ...tickets).run();
 
-    console.log('Tickets actualizados correctamente');
-
     return new Response(JSON.stringify({
       success: true,
-      orderId: ordenId,
-      message: 'Compra procesada exitosamente'
+      orderId: ordenId
     }), {
       headers: { 
         'Content-Type': 'application/json',
@@ -68,11 +69,11 @@ export async function onRequestPost(context) {
     });
 
   } catch (error) {
-    console.error('Error en procesar-pago:', error);
-    
+    // Error más detallado
     return new Response(JSON.stringify({
       success: false,
-      error: 'Error del servidor: ' + error.message
+      error: 'Error interno: ' + error.message,
+      stack: error.stack
     }), {
       status: 500,
       headers: { 
