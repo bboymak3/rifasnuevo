@@ -1,4 +1,3 @@
- 
 export async function onRequestPost(context) {
   const { request, env } = context;
   
@@ -29,8 +28,9 @@ export async function onRequestPost(context) {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente')`
     ).bind(ordenId, rifaId, nombre, telefono, email || '', tickets.join(','), total, metodoPago, comprobante).run();
 
+    // ✅ CORREGIDO: cambiado "orden_id" por "order_id"
     await db.prepare(
-      `UPDATE tickets SET vendido = 1, orden_id = ? WHERE numero IN (${placeholders})`
+      `UPDATE tickets SET vendido = 1, order_id = ? WHERE numero IN (${placeholders})`
     ).bind(ordenId, ...tickets).run();
 
     return new Response(JSON.stringify({

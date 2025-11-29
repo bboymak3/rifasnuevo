@@ -1,4 +1,3 @@
- 
 export async function onRequestGet(context) {
   try {
     const db = context.env.DB;
@@ -6,7 +5,7 @@ export async function onRequestGet(context) {
     const tickets = await db.prepare(`
       SELECT t.numero, o.nombre, o.telefono, o.fecha_creacion
       FROM tickets t
-      JOIN ordenes o ON t.orden_id = o.id
+      JOIN ordenes o ON t.order_id = o.id
       WHERE t.vendido = 1
       ORDER BY o.fecha_creacion DESC
     `).all();
