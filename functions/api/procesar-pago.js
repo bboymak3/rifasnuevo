@@ -7,6 +7,7 @@ export async function onRequestPost(context) {
 
     const db = env.DB;
 
+    // Verificar tickets disponibles
     const placeholders = tickets.map(() => '?').join(',');
     const vendidos = await db.prepare(
       `SELECT COUNT(*) as count FROM tickets WHERE numero IN (${placeholders}) AND vendido = 1`
@@ -22,20 +23,21 @@ export async function onRequestPost(context) {
       });
     }
 
-    const ordenId = crypto.randomUUID();
-    
-    // ✅ USANDO TU ESTRUCTURA ACTUAL
-    await db.prepare(
-      `INSERT INTO ordenes (id, rifa_id, cliente_nombre, cliente_telefono, cliente_email, ticket_id, estado)
-       VALUES (?, ?, ?, ?, ?, ?, 'pendiente')`
+    // ✅ NO usar crypto.randomUUID() - id es AUTOINCREMENT
+    // ✅ INSERT adaptado a la estructura REAL
+    const orden = await db.prepare(
+      `INSERT INTO ordenes (ticket_id, cliente_nombre, cliente_telefono, cliente_email, rifa_id, estado)
+       VALUES (?, ?, ?, ?, ?, 'pendiente')`
     ).bind(
-      ordenId, 
-      rifaId, 
+      tickets.join(','),  // ticket_id (guardar todos los tickets como string)
       nombre, 
       telefono, 
       email || '', 
-      tickets.join(',') // guardar tickets como string
+      parseInt(rifaId)     // rifa_id
     ).run();
+
+    // ✅ Obtener el ID generado automáticamente
+    const ordenId = orden.meta.last_row_id;
 
     await db.prepare(
       `UPDATE tickets SET vendido = 1, order_id = ? WHERE numero IN (${placeholders})`
