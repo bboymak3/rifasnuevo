@@ -23,12 +23,20 @@ export async function onRequestPost(context) {
     }
 
     const ordenId = crypto.randomUUID();
+    
+    // ✅ USANDO TU ESTRUCTURA ACTUAL
     await db.prepare(
-      `INSERT INTO ordenes (id, rifa_id, nombre, telefono, email, tickets, total, metodo_pago, comprobante, estado)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente')`
-    ).bind(ordenId, rifaId, nombre, telefono, email || '', tickets.join(','), total, metodoPago, comprobante).run();
+      `INSERT INTO ordenes (id, rifa_id, cliente_nombre, cliente_telefono, cliente_email, ticket_id, estado)
+       VALUES (?, ?, ?, ?, ?, ?, 'pendiente')`
+    ).bind(
+      ordenId, 
+      rifaId, 
+      nombre, 
+      telefono, 
+      email || '', 
+      tickets.join(',') // guardar tickets como string
+    ).run();
 
-    // ✅ CORREGIDO: cambiado "orden_id" por "order_id"
     await db.prepare(
       `UPDATE tickets SET vendido = 1, order_id = ? WHERE numero IN (${placeholders})`
     ).bind(ordenId, ...tickets).run();
