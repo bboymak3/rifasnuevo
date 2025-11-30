@@ -2,24 +2,8 @@ export async function onRequestPost(context) {
   const { request, env } = context;
   
   try {
-    // Verificar que request existe
-    if (!request) {
-      throw new Error('Request is undefined');
-    }
-    
     const body = await request.json();
     const { rifaId, tickets, nombre, telefono, email, metodoPago, comprobante, total } = body;
-
-    // Verificar datos mínimos requeridos
-    if (!tickets || !nombre || !telefono) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Faltan datos requeridos: tickets, nombre o teléfono'
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
 
     const db = env.DB;
 
@@ -39,7 +23,7 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Crear la orden
+    // ✅ INSERT usando SOLO las columnas que EXISTEN
     const orden = await db.prepare(
       `INSERT INTO ordenes (ticket_id, cliente_nombre, cliente_telefono, cliente_email, rifa_id, estado)
        VALUES (?, ?, ?, ?, ?, 'pendiente')`
@@ -48,12 +32,11 @@ export async function onRequestPost(context) {
       nombre, 
       telefono, 
       email || '', 
-      parseInt(rifaId) || 140  // Valor por defecto si es necesario
+      parseInt(rifaId)
     ).run();
 
     const ordenId = orden.meta.last_row_id;
 
-    // Actualizar tickets
     await db.prepare(
       `UPDATE tickets SET vendido = 1, order_id = ? WHERE numero IN (${placeholders})`
     ).bind(ordenId, ...tickets).run();
@@ -69,11 +52,9 @@ export async function onRequestPost(context) {
     });
 
   } catch (error) {
-    // Error más detallado
     return new Response(JSON.stringify({
       success: false,
-      error: 'Error interno: ' + error.message,
-      stack: error.stack
+      error: 'Error: ' + error.message
     }), {
       status: 500,
       headers: { 
