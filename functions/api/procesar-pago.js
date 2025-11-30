@@ -27,49 +27,47 @@ export async function onRequestPost(context) {
       });
     }
 
-    // 2. CREAR LA ORDEN - SIN DEPENDER DE 'id'
+    // 2. GENERAR ID MANUALMENTE (porque id no es AUTOINCREMENT)
+    const ordenId = Date.now(); // Usar timestamp como ID único
+    console.log('✅ ID generado:', ordenId);
+
+    // 3. CREAR LA ORDEN - ESPECIFICANDO EL ID MANUALMENTE
     console.log('Creando orden...');
-    
-    // Usar un ID temporal (podría ser un timestamp o UUID simple)
-    const ordenIdTemp = Date.now().toString();
-    
     const orden = await db.prepare(
-      `INSERT INTO ordenes (ticket_id, cliente_nombre, cliente_telefono, cliente_email, rifa_id, estado, total, metodo_pago, comprobante)
-       VALUES (?, ?, ?, ?, ?, 'pendiente', ?, ?, ?)`
+      `INSERT INTO ordenes (id, ticket_id, cliente_nombre, cliente_telefono, cliente_email, rifa_id, estado, total, metodo_pago, comprobante)
+       VALUES (?, ?, ?, ?, ?, ?, 'pendiente', ?, ?, ?)`
     ).bind(
-      tickets.join(','),
-      nombre,
-      telefono,
-      email || '',
-      parseInt(rifaId),
-      parseFloat(total),
-      metodoPago,
-      comprobante
+      ordenId,              // id (generado manualmente)
+      tickets.join(','),    // ticket_id
+      nombre,               // cliente_nombre
+      telefono,             // cliente_telefono
+      email || '',          // cliente_email
+      parseInt(rifaId),     // rifa_id
+      parseFloat(total),    // total
+      metodoPago,           // metodo_pago
+      comprobante           // comprobante
     ).run();
 
-    console.log('✅ Orden creada');
+    console.log('✅ Orden creada con ID:', ordenId);
 
-    // 3. OBTENER EL ID REAL (si la tabla tiene AUTOINCREMENT)
-    // Buscar la orden recién creada por los datos únicos
-    const ordenCreada = await db.prepare(
-      'SELECT * FROM ordenes WHERE ticket_id = ? AND cliente_nombre = ? AND cliente_telefono = ? ORDER BY fecha_creacion DESC LIMIT 1'
-    ).bind(tickets.join(','), nombre, telefono).first();
+    // 4. VERIFICAR QUE LA ORDEN SE CREÓ
+    const ordenVerificada = await db.prepare(
+      'SELECT id FROM ordenes WHERE id = ?'
+    ).bind(ordenId).first();
 
-    if (!ordenCreada) {
-      throw new Error('No se pudo encontrar la orden creada');
+    if (!ordenVerificada) {
+      throw new Error('No se pudo verificar la orden creada');
     }
 
-    const ordenId = ordenCreada.id || ordenIdTemp;
-    console.log('✅ ID de orden:', ordenId);
-
-    // 4. MARCAR TICKETS COMO VENDIDOS
+    // 5. MARCAR TICKETS COMO VENDIDOS
     console.log('Actualizando tickets...');
-    await db.prepare(
+    const updateResult = await db.prepare(
       `UPDATE tickets SET vendido = 1, order_id = ? WHERE numero IN (${placeholders})`
     ).bind(ordenId, ...tickets).run();
 
-    console.log('✅ Tickets actualizados');
+    console.log('✅ Tickets actualizados. Filas afectadas:', updateResult.meta.changes);
 
+    // 6. ÉXITO
     return new Response(JSON.stringify({
       success: true,
       orderId: ordenId,
