@@ -5,7 +5,7 @@ export async function onRequestGet(context) {
     const tickets = await db.prepare(`
       SELECT t.numero, o.cliente_nombre as nombre, o.cliente_telefono as telefono, o.fecha_creacion
       FROM tickets t
-      JOIN ordenes o ON t.order_id = o.id
+      JOIN ordenes o ON t.orden_id = o.id  -- ✅ CORREGIDO: orden_id
       WHERE t.vendido = 1
       ORDER BY o.fecha_creacion DESC
     `).all();

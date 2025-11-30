@@ -17,6 +17,8 @@ export async function onRequestPost(context) {
       `SELECT COUNT(*) as count FROM tickets WHERE numero IN (${placeholders}) AND vendido = 1`
     ).bind(...tickets).first();
 
+    console.log('Tickets ya vendidos:', vendidos.count);
+
     if (vendidos.count > 0) {
       return new Response(JSON.stringify({
         success: false,
@@ -27,47 +29,38 @@ export async function onRequestPost(context) {
       });
     }
 
-    // 2. GENERAR ID MANUALMENTE (porque id no es AUTOINCREMENT)
-    const ordenId = Date.now(); // Usar timestamp como ID único
+    // 2. GENERAR ID MANUALMENTE
+    const ordenId = Date.now();
     console.log('✅ ID generado:', ordenId);
 
-    // 3. CREAR LA ORDEN - ESPECIFICANDO EL ID MANUALMENTE
+    // 3. CREAR LA ORDEN
     console.log('Creando orden...');
     const orden = await db.prepare(
       `INSERT INTO ordenes (id, ticket_id, cliente_nombre, cliente_telefono, cliente_email, rifa_id, estado, total, metodo_pago, comprobante)
        VALUES (?, ?, ?, ?, ?, ?, 'pendiente', ?, ?, ?)`
     ).bind(
-      ordenId,              // id (generado manualmente)
-      tickets.join(','),    // ticket_id
-      nombre,               // cliente_nombre
-      telefono,             // cliente_telefono
-      email || '',          // cliente_email
-      parseInt(rifaId),     // rifa_id
-      parseFloat(total),    // total
-      metodoPago,           // metodo_pago
-      comprobante           // comprobante
+      ordenId,
+      tickets.join(','),
+      nombre,
+      telefono,
+      email || '',
+      parseInt(rifaId),
+      parseFloat(total),
+      metodoPago,
+      comprobante
     ).run();
 
     console.log('✅ Orden creada con ID:', ordenId);
 
-    // 4. VERIFICAR QUE LA ORDEN SE CREÓ
-    const ordenVerificada = await db.prepare(
-      'SELECT id FROM ordenes WHERE id = ?'
-    ).bind(ordenId).first();
-
-    if (!ordenVerificada) {
-      throw new Error('No se pudo verificar la orden creada');
-    }
-
-    // 5. MARCAR TICKETS COMO VENDIDOS
+    // 4. MARCAR TICKETS COMO VENDIDOS - ✅ CORREGIDO: usar orden_id
     console.log('Actualizando tickets...');
     const updateResult = await db.prepare(
-      `UPDATE tickets SET vendido = 1, order_id = ? WHERE numero IN (${placeholders})`
-    ).bind(ordenId, ...tickets).run();
+      `UPDATE tickets SET vendido = 1, orden_id = ? WHERE numero IN (${placeholders})`
+    ).bind(ordenId.toString(), ...tickets).run();
 
     console.log('✅ Tickets actualizados. Filas afectadas:', updateResult.meta.changes);
 
-    // 6. ÉXITO
+    // 5. ÉXITO
     return new Response(JSON.stringify({
       success: true,
       orderId: ordenId,
