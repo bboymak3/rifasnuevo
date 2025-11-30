@@ -3,403 +3,335 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin - Gran Rifa</title>
+  <title>Panel Admin - Rifa Moto 0KM</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    .btn-custom {
-      border-radius: 8px;
-      font-weight: 600;
-      transition: all 0.3s ease;
-    }
-    
-    .table-responsive {
-      max-height: 500px;
-      overflow-y: auto;
-    }
-    
-    .modal-header {
-      background: #dc3545;
-      color: white;
-    }
-    
-    .sticky-header {
-      position: sticky;
-      top: 0;
-      background: white;
-      z-index: 100;
-    }
+    .stat-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .stat-number { font-size: 2rem; font-weight: bold; }
+    .ticket-badge { background: #28a745; color: white; padding: 5px 10px; border-radius: 5px; display: inline-block; margin: 2px; }
+    .badge-pendiente { background-color: #ffc107; color: black; }
+    .badge-verificado { background-color: #28a745; color: white; }
+    .badge-rechazado { background-color: #dc3545; color: white; }
   </style>
 </head>
-<body>
-  <nav class="navbar navbar-dark bg-primary">
+<body class="bg-light">
+  <nav class="navbar navbar-dark bg-dark">
     <div class="container">
-      <span class="navbar-brand">👨‍💼 Panel de Administración</span>
-      <div>
-        <a href="/index.html" class="btn btn-outline-light btn-sm">🏠 Inicio</a>
-      </div>
+      <span class="navbar-brand">👨‍💼 Panel Administrativo</span>
+      <a href="/" class="btn btn-outline-light btn-sm">← Volver al Sitio</a>
     </div>
   </nav>
 
   <div class="container mt-4">
-    <h2 class="text-center mb-4">Gestión de la Rifa</h2>
-    
-    <!-- Estadísticas -->
-    <div class="row mb-4">
+    <div class="row">
       <div class="col-md-3">
-        <div class="card text-center">
-          <div class="card-body">
-            <h5>Total Tickets</h5>
-            <h3 class="text-primary" id="totalTickets">100</h3>
+        <div class="stat-card">
+          <h5>📊 Resumen General</h5>
+          <div class="stats">
+            <div class="mb-2">
+              <strong>Total Tickets:</strong><br>
+              <span class="stat-number text-primary">100</span>
+            </div>
+            <div class="mb-2">
+              <strong>Vendidos:</strong><br>
+              <span class="stat-number text-success" id="ticketsVendidos">0</span>
+            </div>
+            <div class="mb-2">
+              <strong>Disponibles:</strong><br>
+              <span class="stat-number text-warning" id="ticketsDisponibles">100</span>
+            </div>
+            <div class="mb-2">
+              <strong>Recaudado:</strong><br>
+              <span class="stat-number text-info" id="totalRecaudado">Bs. 0.00</span>
+            </div>
+            <div class="mb-2">
+              <strong>Órdenes:</strong><br>
+              <span class="stat-number text-secondary" id="totalOrdenes">0</span>
+            </div>
           </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card text-center">
-          <div class="card-body">
-            <h5>Vendidos</h5>
-            <h3 class="text-success" id="ticketsVendidos">0</h3>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card text-center">
-          <div class="card-body">
-            <h5>Disponibles</h5>
-            <h3 class="text-warning" id="ticketsDisponibles">100</h3>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card text-center">
-          <div class="card-body">
-            <h5>Recaudado</h5>
-            <h3 class="text-info" id="totalRecaudado">Bs. 0</h3>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Botones de acción -->
-    <div class="row mb-4">
-      <div class="col-md-6">
-        <button class="btn btn-success w-100 btn-custom" onclick="marcarComoPagado()">
-          ✅ Marcar como Pagado
-        </button>
-      </div>
-      <div class="col-md-6">
-        <button class="btn btn-danger w-100 btn-custom" data-bs-toggle="modal" data-bs-target="#confirmModal">
-          🗑️ Eliminar Todas las Órdenes
-        </button>
-      </div>
-    </div>
-
-    <!-- Información de órdenes -->
-    <div class="alert alert-info sticky-header">
-      <strong>📊 Total de órdenes: <span id="totalOrders">0</span></strong> | 
-      <strong>✅ Pagadas: <span id="paidOrders">0</span></strong> | 
-      <strong>⏳ Pendientes: <span id="pendingOrders">0</span></strong>
-    </div>
-
-    <!-- Tabla de órdenes -->
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">📋 Órdenes de Compra</h5>
-        <div>
-          <button class="btn btn-outline-success btn-sm me-2" onclick="agregarOrdenEjemplo()">
-            ➕ Agregar Ejemplo
+          <button class="btn btn-sm btn-primary w-100 mt-2" onclick="cargarEstadisticas()">
+            🔄 Actualizar
           </button>
-          <button class="btn btn-outline-primary btn-sm" onclick="exportarDatos()">
-            📤 Exportar Datos
+          
+          <!-- BOTÓN REINICIAR EN ROJO -->
+          <button class="btn btn-sm btn-danger w-100 mt-3" onclick="reiniciarRifa()">
+            🚨 REINICIAR RIFA
           </button>
+          <small class="text-muted d-block mt-1">⚠️ Esto borrará todas las órdenes y liberará los tickets</small>
         </div>
       </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-striped table-hover mb-0">
-            <thead class="table-dark">
-              <tr>
-                <th><input type="checkbox" id="selectAll"></th>
-                <th>ID</th>
-                <th>Teléfono</th>
-                <th>Tickets</th>
-                <th>Monto</th>
-                <th>Estado</th>
-                <th>Fecha</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="ordersTable">
-              <!-- Las órdenes se cargarán aquí dinámicamente -->
-            </tbody>
-          </table>
+
+      <div class="col-md-9">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">🎫 Tickets Vendidos</h5>
+            <button class="btn btn-sm btn-primary" onclick="cargarTicketsVendidos()">
+              🔄 Actualizar
+            </button>
+          </div>
+          <div class="card-body">
+            <div id="listaTicketsVendidos">
+              <p class="text-center">Cargando tickets vendidos...</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">💰 Órdenes de Compra</h5>
+            <button class="btn btn-sm btn-primary" onclick="cargarOrdenes()">
+              🔄 Actualizar
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>ID Orden</th>
+                    <th>Cliente</th>
+                    <th>Teléfono</th>
+                    <th>Tickets</th>
+                    <th>Total</th>
+                    <th>Método Pago</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                    <th>Fecha</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaOrdenes">
+                  <tr>
+                    <td colspan="9" class="text-center">Cargando órdenes...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal de Confirmación para Eliminar Tablas -->
-  <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="confirmModalLabel">⚠️ Confirmar Eliminación Total</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <p class="alert alert-danger">
-            <strong>¡ELIMINACIÓN COMPLETA!</strong><br>
-            Esta acción <strong>ELIMINARÁ TODAS LAS ÓRDENES</strong> de la base de datos:
-          </p>
-          <ul>
-            <li><strong id="ordersCount">0</strong> órdenes en total</li>
-            <li><strong id="paidCount">0</strong> órdenes pagadas</li>
-            <li><strong id="pendingCount">0</strong> órdenes pendientes</li>
-          </ul>
-          <p class="text-danger"><strong>Esta acción NO se puede deshacer.</strong></p>
-          <div class="mb-3">
-            <label for="confirmText" class="form-label">
-              Escribe <strong>"ELIMINAR TODAS LAS ÓRDENES"</strong> para confirmar:
-            </label>
-            <input type="text" class="form-control" id="confirmText" placeholder="Escribe ELIMINAR TODAS LAS ÓRDENES aquí">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">❌ Cancelar</button>
-          <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="eliminarTodasLasOrdenes()" disabled>
-            🗑️ Eliminar Todas las Órdenes
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Datos de ejemplo más realistas
-    let orders = [
-      { id: 1, phone: '0412-1234567', tickets: [5, 12, 23], amount: 1497, status: 'Pendiente', date: '2024-01-15' },
-      { id: 2, phone: '0414-7654321', tickets: [34, 45], amount: 998, status: 'Pagado', date: '2024-01-14' },
-      { id: 3, phone: '0426-5558888', tickets: [56], amount: 499, status: 'Pendiente', date: '2024-01-15' },
-      { id: 4, phone: '0412-9998888', tickets: [67, 78, 89], amount: 1497, status: 'Pagado', date: '2024-01-13' },
-      { id: 5, phone: '0424-1112233', tickets: [11, 22], amount: 998, status: 'Pendiente', date: '2024-01-16' },
-      { id: 6, phone: '0416-4445566', tickets: [33, 44, 55, 66], amount: 1996, status: 'Pagado', date: '2024-01-12' }
-    ];
-
-    // Inicialización
     document.addEventListener('DOMContentLoaded', function() {
-      cargarOrdenes();
-      actualizarEstadisticas();
-      actualizarModalInfo();
-      
-      // Validación del texto de confirmación
-      document.getElementById('confirmText').addEventListener('input', function() {
-        const confirmBtn = document.getElementById('confirmDeleteBtn');
-        confirmBtn.disabled = this.value !== 'ELIMINAR TODAS LAS ÓRDENES';
-      });
-      
-      // Seleccionar todos los checkboxes
-      document.getElementById('selectAll').addEventListener('change', function() {
-        const checkboxes = document.querySelectorAll('#ordersTable input[type="checkbox"]');
-        checkboxes.forEach(checkbox => {
-          checkbox.checked = this.checked;
-        });
-      });
-
-      // Actualizar información del modal cuando se abre
-      document.getElementById('confirmModal').addEventListener('show.bs.modal', function() {
-        actualizarModalInfo();
-      });
+      cargarPanelAdmin();
     });
 
-    // Actualizar información en el modal
-    function actualizarModalInfo() {
-      const totalOrders = orders.length;
-      const paidOrders = orders.filter(order => order.status === 'Pagado').length;
-      const pendingOrders = totalOrders - paidOrders;
-
-      document.getElementById('ordersCount').textContent = totalOrders;
-      document.getElementById('paidCount').textContent = paidOrders;
-      document.getElementById('pendingCount').textContent = pendingOrders;
+    async function cargarPanelAdmin() {
+      await cargarEstadisticas();
+      await cargarTicketsVendidos();
+      await cargarOrdenes();
     }
 
-    // Cargar órdenes en la tabla
-    function cargarOrdenes() {
-      const tbody = document.getElementById('ordersTable');
-      tbody.innerHTML = '';
-
-      if (orders.length === 0) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td colspan="8" class="text-center text-muted py-4">
-            <h5>No hay órdenes registradas</h5>
-            <p>Usa el botón "Agregar Ejemplo" para cargar datos de prueba</p>
-          </td>
-        `;
-        tbody.appendChild(row);
-        return;
-      }
-
-      orders.forEach(order => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td><input type="checkbox" class="order-checkbox" data-id="${order.id}"></td>
-          <td><strong>#${order.id}</strong></td>
-          <td>${order.phone}</td>
-          <td>
-            <span class="badge bg-info">${order.tickets.length} tickets</span><br>
-            <small>${order.tickets.join(', ')}</small>
-          </td>
-          <td><strong>Bs. ${order.amount.toLocaleString()}</strong></td>
-          <td>
-            <span class="badge ${order.status === 'Pagado' ? 'bg-success' : 'bg-warning'}">
-              ${order.status}
-            </span>
-          </td>
-          <td>${order.date}</td>
-          <td>
-            <button class="btn btn-sm btn-outline-primary mb-1" onclick="editarOrden(${order.id})">
-              ✏️ Editar
-            </button>
-            <button class="btn btn-sm btn-outline-danger" onclick="eliminarOrden(${order.id})">
-              🗑️ Eliminar
-            </button>
-          </td>
-        `;
-        tbody.appendChild(row);
-      });
-
-      // Actualizar contadores de órdenes
-      actualizarContadoresOrdenes();
-    }
-
-    // Actualizar contadores de órdenes
-    function actualizarContadoresOrdenes() {
-      const totalOrders = orders.length;
-      const paidOrders = orders.filter(order => order.status === 'Pagado').length;
-      const pendingOrders = totalOrders - paidOrders;
-
-      document.getElementById('totalOrders').textContent = totalOrders;
-      document.getElementById('paidOrders').textContent = paidOrders;
-      document.getElementById('pendingOrders').textContent = pendingOrders;
-    }
-
-    // Actualizar estadísticas generales
-    function actualizarEstadisticas() {
-      const ticketsVendidos = orders
-        .filter(order => order.status === 'Pagado')
-        .reduce((total, order) => total + order.tickets.length, 0);
-      
-      const totalRecaudado = orders
-        .filter(order => order.status === 'Pagado')
-        .reduce((total, order) => total + order.amount, 0);
-
-      document.getElementById('ticketsVendidos').textContent = ticketsVendidos;
-      document.getElementById('ticketsDisponibles').textContent = 100 - ticketsVendidos;
-      document.getElementById('totalRecaudado').textContent = 'Bs. ' + totalRecaudado.toLocaleString();
-    }
-
-    // Marcar órdenes como pagadas
-    function marcarComoPagado() {
-      const selectedOrders = document.querySelectorAll('#ordersTable input[type="checkbox"]:checked');
-      
-      if (selectedOrders.length === 0) {
-        alert('❌ Por favor selecciona al menos una orden para marcar como pagada.');
-        return;
-      }
-
-      let updatedCount = 0;
-      selectedOrders.forEach(checkbox => {
-        const orderId = parseInt(checkbox.dataset.id);
-        const order = orders.find(o => o.id === orderId);
-        if (order && order.status === 'Pendiente') {
-          order.status = 'Pagado';
-          updatedCount++;
+    async function cargarEstadisticas() {
+      try {
+        const API_BASE_URL = window.location.origin;
+        const response = await fetch(`${API_BASE_URL}/api/estadisticas`);
+        
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
-      });
-
-      cargarOrdenes();
-      actualizarEstadisticas();
-      alert(`✅ ${updatedCount} órdenes marcadas como pagadas correctamente.`);
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          document.getElementById('ticketsVendidos').textContent = data.data.vendidos;
+          document.getElementById('ticketsDisponibles').textContent = data.data.disponibles;
+          document.getElementById('totalRecaudado').textContent = `Bs. ${(data.data.recaudado || 0).toFixed(2)}`;
+          document.getElementById('totalOrdenes').textContent = data.data.totalOrdenes;
+        }
+      } catch (error) {
+        console.error('Error cargando estadísticas:', error);
+      }
     }
 
-    // ELIMINAR TODAS LAS ÓRDENES - FUNCIÓN PRINCIPAL CORREGIDA
-    function eliminarTodasLasOrdenes() {
-      if (orders.length === 0) {
-        alert('ℹ️ No hay órdenes para eliminar.');
+    async function cargarTicketsVendidos() {
+      try {
+        const API_BASE_URL = window.location.origin;
+        const response = await fetch(`${API_BASE_URL}/api/tickets-vendidos`);
+        
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const container = document.getElementById('listaTicketsVendidos');
+        
+        if (data.success) {
+          if (data.data.tickets.length === 0) {
+            container.innerHTML = '<p class="text-center text-muted">No hay tickets vendidos aún</p>';
+            return;
+          }
+          
+          const ticketsHTML = data.data.tickets.map(ticket => 
+            `<span class="ticket-badge" title="${ticket.nombre} - ${ticket.telefono}">${ticket.numero}</span>`
+          ).join('');
+          
+          container.innerHTML = `
+            <p><strong>Total vendidos:</strong> ${data.data.tickets.length}</p>
+            ${ticketsHTML}
+          `;
+        }
+      } catch (error) {
+        console.error('Error cargando tickets:', error);
+        document.getElementById('listaTicketsVendidos').innerHTML = 
+          '<p class="text-center text-danger">Error cargando tickets</p>';
+      }
+    }
+
+    async function cargarOrdenes() {
+      try {
+        const API_BASE_URL = window.location.origin;
+        const response = await fetch(`${API_BASE_URL}/api/ordenes`);
+        
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const tabla = document.getElementById('tablaOrdenes');
+        
+        if (data.success) {
+          if (data.data.ordenes.length === 0) {
+            tabla.innerHTML = '<tr><td colspan="9" class="text-center">No hay órdenes registradas</td></tr>';
+            return;
+          }
+          
+          tabla.innerHTML = data.data.ordenes.map(orden => `
+            <tr>
+              <td><small>${orden.id}</small></td>
+              <td>
+                <strong>${orden.nombre}</strong><br>
+                <small class="text-muted">${orden.email || 'Sin email'}</small>
+              </td>
+              <td>${orden.telefono}</td>
+              <td>
+                <small>
+                  ${orden.ticket_id || 'N/A'}
+                </small>
+              </td>
+              <td>Bs. ${orden.total}</td>
+              <td>${orden.metodo_pago}</td>
+              <td>
+                <span class="badge ${getBadgeClass(orden.estado)}">
+                  ${orden.estado}
+                </span>
+              </td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-success" onclick="cambiarEstado(${orden.id}, 'verificado')" ${orden.estado === 'verificado' ? 'disabled' : ''}>
+                    ✅ Verificar
+                  </button>
+                  <button class="btn btn-danger" onclick="cambiarEstado(${orden.id}, 'rechazado')" ${orden.estado === 'rechazado' ? 'disabled' : ''}>
+                    ❌ Rechazar
+                  </button>
+                  ${orden.estado !== 'pendiente' ? `
+                    <button class="btn btn-warning" onclick="cambiarEstado(${orden.id}, 'pendiente')">
+                      🔄 Pendiente
+                    </button>
+                  ` : ''}
+                </div>
+              </td>
+              <td>${new Date(orden.fecha_creacion).toLocaleString()}</td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('Error cargando órdenes:', error);
+        document.getElementById('tablaOrdenes').innerHTML = 
+          '<tr><td colspan="9" class="text-center text-danger">Error cargando órdenes</td></tr>';
+      }
+    }
+
+    function getBadgeClass(estado) {
+      switch(estado) {
+        case 'verificado': return 'badge-verificado';
+        case 'rechazado': return 'badge-rechazado';
+        default: return 'badge-pendiente';
+      }
+    }
+
+    async function cambiarEstado(ordenId, nuevoEstado) {
+      if (!confirm(`¿Estás seguro de cambiar el estado a "${nuevoEstado}"?`)) {
         return;
       }
 
-      // Cerrar el modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
-      modal.hide();
-      
-      // Mostrar mensaje de proceso
-      alert(`🗑️ Eliminando ${orders.length} órdenes...`);
-      
-      // ELIMINAR TODAS LAS ÓRDENES
-      orders = []; // Esto vacía completamente el array
-      
-      // Actualizar la interfaz
-      cargarOrdenes();
-      actualizarEstadisticas();
-      actualizarContadoresOrdenes();
-      
-      // Limpiar el campo de confirmación
-      document.getElementById('confirmText').value = '';
-      document.getElementById('confirmDeleteBtn').disabled = true;
-      
-      // Mostrar confirmación final
-      setTimeout(() => {
-        alert('✅ ¡Todas las órdenes han sido eliminadas correctamente!');
-      }, 500);
-    }
+      try {
+        const API_BASE_URL = window.location.origin;
+        const response = await fetch(`${API_BASE_URL}/api/cambiar-estado`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            ordenId: ordenId, 
+            nuevoEstado: nuevoEstado 
+          })
+        });
 
-    // Funciones auxiliares
-    function agregarOrdenEjemplo() {
-      const newId = orders.length > 0 ? Math.max(...orders.map(o => o.id)) + 1 : 1;
-      const newOrder = {
-        id: newId,
-        phone: '0412-' + Math.floor(1000000 + Math.random() * 9000000),
-        tickets: [Math.floor(Math.random() * 100) + 1],
-        amount: 499,
-        status: 'Pendiente',
-        date: new Date().toISOString().split('T')[0]
-      };
-      
-      orders.push(newOrder);
-      cargarOrdenes();
-      actualizarEstadisticas();
-      alert(`✅ Nueva orden de ejemplo #${newId} agregada.`);
-    }
-
-    function editarOrden(id) {
-      const order = orders.find(o => o.id === id);
-      if (order) {
-        const newStatus = order.status === 'Pagado' ? 'Pendiente' : 'Pagado';
-        order.status = newStatus;
-        cargarOrdenes();
-        actualizarEstadisticas();
-        alert(`✅ Orden #${id} actualizada a: ${newStatus}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            alert('✅ Estado actualizado correctamente');
+            cargarOrdenes(); // Recargar la tabla
+          } else {
+            alert('❌ Error: ' + data.error);
+          }
+        } else {
+          throw new Error(`Error ${response.status}`);
+        }
+      } catch (error) {
+        console.error('Error cambiando estado:', error);
+        alert('❌ Error al cambiar el estado');
       }
     }
 
-    function eliminarOrden(id) {
-      if (confirm(`¿Estás seguro de que quieres eliminar la orden #${id}?`)) {
-        orders = orders.filter(order => order.id !== id);
-        cargarOrdenes();
-        actualizarEstadisticas();
-        alert(`✅ Orden #${id} eliminada correctamente.`);
-      }
-    }
+    // === FUNCIÓN NUEVA: REINICIAR RIFA ===
+    async function reiniciarRifa() {
+      // Confirmación EXTRA de seguridad
+      const confirmacion1 = confirm('🚨 ¡ADVERTENCIA CRÍTICA!\n\n¿Estás ABSOLUTAMENTE seguro de que quieres REINICIAR toda la rifa?\n\n⚠️ Esto borrará:\n• Todas las órdenes de compra\n• Todo el historial de ventas\n• Todo el registro de recaudación\n\nLos tickets quedarán disponibles nuevamente.');
+      
+      if (!confirmacion1) return;
 
-    function exportarDatos() {
-      if (orders.length === 0) {
-        alert('❌ No hay órdenes para exportar.');
+      // Segunda confirmación
+      const confirmacion2 = prompt('Para confirmar el reinicio, escribe: "REINICIAR"');
+      
+      if (confirmacion2 !== 'REINICIAR') {
+        alert('❌ Reinicio cancelado. No se escribió la palabra correcta.');
         return;
       }
-      alert(`📤 Exportando ${orders.length} órdenes... Funcionalidad en desarrollo`);
+
+      try {
+        const API_BASE_URL = window.location.origin;
+        const response = await fetch(`${API_BASE_URL}/api/reiniciar-rifa`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            confirmacion: 'CONFIRMAR_REINICIO'
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alert('✅ ' + data.message + '\n\nTickets actualizados: ' + data.datos.ticketsActualizados + '\nÓrdenes eliminadas: ' + data.datos.ordenesEliminadas);
+          
+          // Recargar todo el panel
+          cargarPanelAdmin();
+        } else {
+          alert('❌ Error: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Error reiniciando rifa:', error);
+        alert('❌ Error al reiniciar la rifa. Verifica la conexión.');
+      }
     }
+
+    setInterval(() => {
+      cargarPanelAdmin();
+    }, 30000);
   </script>
 </body>
 </html>
