@@ -13,13 +13,9 @@ export async function onRequestPost(context) {
 
     // 1. VERIFICAR TICKETS DISPONIBLES
     const placeholders = tickets.map(() => '?').join(',');
-    console.log('Verificando tickets:', tickets);
-    
     const vendidos = await db.prepare(
       `SELECT COUNT(*) as count FROM tickets WHERE numero IN (${placeholders}) AND vendido = 1`
     ).bind(...tickets).first();
-
-    console.log('Tickets ya vendidos:', vendidos.count);
 
     if (vendidos.count > 0) {
       return new Response(JSON.stringify({
@@ -31,34 +27,49 @@ export async function onRequestPost(context) {
       });
     }
 
-    // 2. CREAR LA ORDEN
+    // 2. CREAR LA ORDEN - SIN DEPENDER DE 'id'
     console.log('Creando orden...');
+    
+    // Usar un ID temporal (podría ser un timestamp o UUID simple)
+    const ordenIdTemp = Date.now().toString();
+    
     const orden = await db.prepare(
       `INSERT INTO ordenes (ticket_id, cliente_nombre, cliente_telefono, cliente_email, rifa_id, estado, total, metodo_pago, comprobante)
        VALUES (?, ?, ?, ?, ?, 'pendiente', ?, ?, ?)`
     ).bind(
-      tickets.join(','),  // ticket_id
-      nombre,             // cliente_nombre
-      telefono,           // cliente_telefono
-      email || '',        // cliente_email
-      parseInt(rifaId),   // rifa_id
-      parseFloat(total),  // total
-      metodoPago,         // metodo_pago
-      comprobante         // comprobante
+      tickets.join(','),
+      nombre,
+      telefono,
+      email || '',
+      parseInt(rifaId),
+      parseFloat(total),
+      metodoPago,
+      comprobante
     ).run();
 
-    const ordenId = orden.meta.last_row_id;
-    console.log('✅ Orden creada con ID:', ordenId);
+    console.log('✅ Orden creada');
 
-    // 3. ACTUALIZAR TICKETS (corregido: cambiado order_id por id)
+    // 3. OBTENER EL ID REAL (si la tabla tiene AUTOINCREMENT)
+    // Buscar la orden recién creada por los datos únicos
+    const ordenCreada = await db.prepare(
+      'SELECT * FROM ordenes WHERE ticket_id = ? AND cliente_nombre = ? AND cliente_telefono = ? ORDER BY fecha_creacion DESC LIMIT 1'
+    ).bind(tickets.join(','), nombre, telefono).first();
+
+    if (!ordenCreada) {
+      throw new Error('No se pudo encontrar la orden creada');
+    }
+
+    const ordenId = ordenCreada.id || ordenIdTemp;
+    console.log('✅ ID de orden:', ordenId);
+
+    // 4. MARCAR TICKETS COMO VENDIDOS
     console.log('Actualizando tickets...');
-    const updateResult = await db.prepare(
-      `UPDATE tickets SET vendido = 1, id = ? WHERE numero IN (${placeholders})`
+    await db.prepare(
+      `UPDATE tickets SET vendido = 1, order_id = ? WHERE numero IN (${placeholders})`
     ).bind(ordenId, ...tickets).run();
 
-    console.log('✅ Tickets actualizados. Filas afectadas:', updateResult.meta.changes);
+    console.log('✅ Tickets actualizados');
 
-    // 4. ÉXITO
     return new Response(JSON.stringify({
       success: true,
       orderId: ordenId,
