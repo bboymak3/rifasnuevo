@@ -243,12 +243,19 @@
   </div>
 
   <script>
-    // Simulación de datos para demostración
+    // Datos globales para la aplicación
+    let selectedNumbers = [];
+    const ticketPrice = 499.00;
+
+    // Inicialización cuando el DOM esté listo
     document.addEventListener('DOMContentLoaded', function() {
+      initializeTicketGrid();
+      simulateSoldTickets();
+    });
+
+    // Función para inicializar la grilla de tickets
+    function initializeTicketGrid() {
       const ticketGrid = document.getElementById('ticketGrid');
-      const selectedTickets = document.getElementById('selectedTickets');
-      const totalPagar = document.getElementById('totalPagar');
-      const btnPagar = document.getElementById('btnPagar');
       
       // Generar números del 1 al 100
       for (let i = 1; i <= 100; i++) {
@@ -258,72 +265,109 @@
         ticket.dataset.number = i;
         
         ticket.addEventListener('click', function() {
-          if (this.classList.contains('vendido')) return;
-          
-          if (this.classList.contains('selected')) {
-            this.classList.remove('selected');
-            this.classList.add('disponible');
-          } else {
-            this.classList.remove('disponible');
-            this.classList.add('selected');
-          }
-          
-          updateSelection();
+          toggleTicketSelection(this);
         });
         
         ticketGrid.appendChild(ticket);
       }
+    }
+
+    // Función para alternar la selección de un ticket
+    function toggleTicketSelection(ticketElement) {
+      if (ticketElement.classList.contains('vendido')) return;
       
-      function updateSelection() {
-        const selected = document.querySelectorAll('.ticket-number.selected');
-        selectedTickets.innerHTML = '';
-        
-        if (selected.length > 0) {
-          const numbers = Array.from(selected).map(ticket => ticket.dataset.number);
-          selectedTickets.textContent = numbers.join(', ');
-          totalPagar.textContent = (selected.length * 499).toFixed(2);
-          btnPagar.disabled = false;
-        } else {
-          selectedTickets.textContent = 'Ninguno';
-          totalPagar.textContent = '0.00';
-          btnPagar.disabled = true;
-        }
+      const number = parseInt(ticketElement.dataset.number);
+      
+      if (ticketElement.classList.contains('selected')) {
+        // Deseleccionar
+        ticketElement.classList.remove('selected');
+        ticketElement.classList.add('disponible');
+        selectedNumbers = selectedNumbers.filter(n => n !== number);
+      } else {
+        // Seleccionar
+        ticketElement.classList.remove('disponible');
+        ticketElement.classList.add('selected');
+        selectedNumbers.push(number);
       }
       
-      // Simular algunos números vendidos
+      updateSelectionDisplay();
+    }
+
+    // Función para actualizar la visualización de la selección
+    function updateSelectionDisplay() {
+      const selectedTicketsElement = document.getElementById('selectedTickets');
+      const totalPagarElement = document.getElementById('totalPagar');
+      const btnPagar = document.getElementById('btnPagar');
+      
+      if (selectedNumbers.length > 0) {
+        selectedTicketsElement.textContent = selectedNumbers.join(', ');
+        totalPagarElement.textContent = (selectedNumbers.length * ticketPrice).toFixed(2);
+        btnPagar.disabled = false;
+      } else {
+        selectedTicketsElement.textContent = 'Ninguno';
+        totalPagarElement.textContent = '0.00';
+        btnPagar.disabled = true;
+      }
+    }
+
+    // Función para simular tickets vendidos
+    function simulateSoldTickets() {
       setTimeout(() => {
         const soldTickets = [5, 12, 23, 34, 45, 56, 67, 78, 89, 100];
+        
         soldTickets.forEach(num => {
           const ticket = document.querySelector(`.ticket-number[data-number="${num}"]`);
           if (ticket) {
-            ticket.classList.remove('disponible');
+            ticket.classList.remove('disponible', 'selected');
             ticket.classList.add('vendido');
+            
+            // Remover de selección si estaba seleccionado
+            selectedNumbers = selectedNumbers.filter(n => n !== num);
           }
         });
         
         // Actualizar contadores
-        document.getElementById('ticketsVendidos').textContent = soldTickets.length;
-        document.getElementById('ticketsDisponibles').textContent = 100 - soldTickets.length;
-        document.getElementById('totalRecaudado').textContent = 'Bs. ' + (soldTickets.length * 499);
+        updateCounters(soldTickets.length);
+        updateSelectionDisplay();
       }, 500);
-    });
-    
-    function procederPago() {
-      alert('Funcionalidad de pago en desarrollo. Serás redirigido al proceso de pago.');
     }
-    
+
+    // Función para actualizar los contadores
+    function updateCounters(soldCount) {
+      document.getElementById('ticketsVendidos').textContent = soldCount;
+      document.getElementById('ticketsDisponibles').textContent = 100 - soldCount;
+      document.getElementById('totalRecaudado').textContent = 'Bs. ' + (soldCount * ticketPrice);
+    }
+
+    // Función para proceder al pago
+    function procederPago() {
+      if (selectedNumbers.length === 0) {
+        alert('Por favor selecciona al menos un ticket antes de proceder al pago.');
+        return;
+      }
+      
+      // Guardar la selección en sessionStorage para usarla en la página de pago
+      sessionStorage.setItem('selectedTickets', JSON.stringify(selectedNumbers));
+      sessionStorage.setItem('totalAmount', (selectedNumbers.length * ticketPrice).toFixed(2));
+      
+      // Redirigir a la página de procesamiento de pago
+      window.location.href = '/procesar-pago.html';
+    }
+
+    // Función para limpiar la selección
     function limpiarSeleccion() {
-      const selected = document.querySelectorAll('.ticket-number.selected');
-      selected.forEach(ticket => {
-        ticket.classList.remove('selected');
+      // Limpiar selección visual
+      const selectedTickets = document.querySelectorAll('.ticket-number.selected');
+      selectedTickets.forEach(ticket => {
         if (!ticket.classList.contains('vendido')) {
+          ticket.classList.remove('selected');
           ticket.classList.add('disponible');
         }
       });
       
-      document.getElementById('selectedTickets').textContent = 'Ninguno';
-      document.getElementById('totalPagar').textContent = '0.00';
-      document.getElementById('btnPagar').disabled = true;
+      // Limpiar datos
+      selectedNumbers = [];
+      updateSelectionDisplay();
     }
   </script>
 </body>
