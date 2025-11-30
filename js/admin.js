@@ -82,7 +82,15 @@ async function cargarOrdenes() {
         return;
       }
       
-      tabla.innerHTML = data.data.ordenes.map(orden => `
+      // DEBUG: Ver qué datos llegan realmente
+      console.log('Datos de órdenes recibidos:', data.data.ordenes[0]);
+      
+      tabla.innerHTML = data.data.ordenes.map(orden => {
+        // Obtener los números de tickets (puede venir en ticket_id o tickets)
+        const ticketsData = orden.ticket_id || orden.tickets || '';
+        const ticketsArray = ticketsData ? ticketsData.toString().split(',') : [];
+        
+        return `
         <tr>
           <td><small>${orden.id}</small></td>
           <td>
@@ -92,9 +100,12 @@ async function cargarOrdenes() {
           <td>${orden.telefono}</td>
           <td>
             <small>
-              ${(orden.tickets || orden.ticket_id || 'N/A').split(',').map(num => 
-                `<span class="badge bg-secondary me-1">${num.trim()}</span>`
-              ).join('')}
+              ${ticketsArray.length > 0 ? 
+                ticketsArray.map(num => 
+                  `<span class="badge bg-secondary me-1">${num.trim()}</span>`
+                ).join('') 
+                : 'Sin tickets'
+              }
             </small>
           </td>
           <td>Bs. ${orden.total}</td>
@@ -121,7 +132,8 @@ async function cargarOrdenes() {
           </td>
           <td>${new Date(orden.fecha_creacion).toLocaleString()}</td>
         </tr>
-      `).join('');
+        `;
+      }).join('');
     }
   } catch (error) {
     console.error('Error cargando órdenes:', error);
