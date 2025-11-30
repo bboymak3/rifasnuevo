@@ -60,7 +60,7 @@ async function cargarTicketsVendidos() {
   } catch (error) {
     console.error('Error cargando tickets:', error);
     document.getElementById('listaTicketsVendidos').innerHTML = 
-      '<p class="text-center text-danger'>Error cargando tickets</p>';
+      '<p class="text-center text-danger">Error cargando tickets</p>';
   }
 }
 
