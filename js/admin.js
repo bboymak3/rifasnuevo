@@ -77,8 +77,18 @@ async function cargarOrdenes() {
     const tabla = document.getElementById('tablaOrdenes');
     
     if (data.success) {
+      // 🔍 DEBUG: VER QUÉ CAMPOS LLEGAN REALMENTE
+      console.log('=== DEBUG - ESTRUCTURA DE DATOS ===');
+      if (data.data.ordenes.length > 0) {
+        console.log('Primera orden completa:', data.data.ordenes[0]);
+        console.log('Campos disponibles:', Object.keys(data.data.ordenes[0]));
+        console.log('Valor de tickets:', data.data.ordenes[0].tickets);
+        console.log('Valor de ticket_id:', data.data.ordenes[0].ticket_id);
+      }
+      console.log('=== FIN DEBUG ===');
+      
       if (data.data.ordenes.length === 0) {
-        tabla.innerHTML = '<tr><td colspan="10" class="text-center">No hay órdenes registradas</td></tr>';
+        tabla.innerHTML = '<tr><td colspan="9" class="text-center">No hay órdenes registradas</td></tr>';
         return;
       }
       
@@ -90,7 +100,11 @@ async function cargarOrdenes() {
             <small class="text-muted">${orden.email || 'Sin email'}</small>
           </td>
           <td>${orden.telefono}</td>
-          <td>${orden.ticket_id || 'N/A'}</td>
+          <td>
+            <small>
+              ${orden.tickets || orden.ticket_id || 'N/A'}
+            </small>
+          </td>
           <td>Bs. ${orden.total}</td>
           <td>${orden.metodo_pago}</td>
           <td>
@@ -120,7 +134,7 @@ async function cargarOrdenes() {
   } catch (error) {
     console.error('Error cargando órdenes:', error);
     document.getElementById('tablaOrdenes').innerHTML = 
-      '<tr><td colspan="10" class="text-center text-danger">Error cargando órdenes</td></tr>';
+      '<tr><td colspan="9" class="text-center text-danger">Error cargando órdenes</td></tr>';
   }
 }
 
