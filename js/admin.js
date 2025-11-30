@@ -1,4 +1,3 @@
- 
 document.addEventListener('DOMContentLoaded', function() {
   cargarPanelAdmin();
 });
@@ -11,7 +10,13 @@ async function cargarPanelAdmin() {
 
 async function cargarEstadisticas() {
   try {
-    const response = await fetch('/api/estadisticas');
+    const API_BASE_URL = window.location.origin;
+    const response = await fetch(`${API_BASE_URL}/api/estadisticas`);
+    
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+    
     const data = await response.json();
     
     if (data.success) {
@@ -27,7 +32,13 @@ async function cargarEstadisticas() {
 
 async function cargarTicketsVendidos() {
   try {
-    const response = await fetch('/api/tickets-vendidos');
+    const API_BASE_URL = window.location.origin;
+    const response = await fetch(`${API_BASE_URL}/api/tickets-vendidos`);
+    
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+    
     const data = await response.json();
     const container = document.getElementById('listaTicketsVendidos');
     
@@ -55,7 +66,13 @@ async function cargarTicketsVendidos() {
 
 async function cargarOrdenes() {
   try {
-    const response = await fetch('/api/ordenes');
+    const API_BASE_URL = window.location.origin;
+    const response = await fetch(`${API_BASE_URL}/api/ordenes`);
+    
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+    
     const data = await response.json();
     const tabla = document.getElementById('tablaOrdenes');
     
@@ -84,11 +101,19 @@ async function cargarOrdenes() {
           <td>${new Date(orden.fecha_creacion).toLocaleString()}</td>
         </tr>
       `).join('');
+    } else {
+      throw new Error(data.message || 'Error en la respuesta del servidor');
     }
   } catch (error) {
     console.error('Error cargando órdenes:', error);
-    document.getElementById('tablaOrdenes').innerHTML = 
-      '<tr><td colspan="8" class="text-center text-danger">Error cargando órdenes</td></tr>';
+    document.getElementById('tablaOrdenes').innerHTML = `
+      <tr>
+        <td colspan="8" class="text-center text-danger">
+          Error cargando órdenes: ${error.message}<br>
+          <small>Intentando nuevamente en 30 segundos...</small>
+        </td>
+      </tr>
+    `;
   }
 }
 
