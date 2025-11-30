@@ -1,18 +1,10 @@
+ 
 export async function onRequestGet(context) {
   try {
     const db = context.env.DB;
     
     const ordenes = await db.prepare(`
-      SELECT 
-        id, 
-        cliente_nombre as nombre,           -- ← CAMBIAR aquí
-        cliente_telefono as telefono,       -- ← CAMBIAR aquí  
-        cliente_email as email,             -- ← CAMBIAR aquí
-        total, 
-        metodo_pago, 
-        comprobante, 
-        estado, 
-        fecha_creacion
+      SELECT id, nombre, telefono, email, tickets, total, metodo_pago, comprobante, estado, fecha_creacion
       FROM ordenes 
       ORDER BY fecha_creacion DESC
     `).all();
