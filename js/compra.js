@@ -2,24 +2,33 @@ export async function onRequestPost(context) {
   const { request, env } = context;
   
   try {
-    console.log('=== INICIANDO PROCESAR-PAGO ===');
+    console.log('🔍 DEBUG - Iniciando procesar-pago...');
     
     const body = await request.json();
     const { rifaId, tickets, nombre, telefono, email, metodoPago, comprobante, total } = body;
 
-    console.log('Datos recibidos:', { rifaId, tickets, nombre, telefono, total });
+    console.log('🔍 DEBUG - Datos recibidos:', { 
+      rifaId, 
+      tickets, 
+      nombre, 
+      telefono, 
+      email,
+      metodoPago,
+      comprobante,
+      total 
+    });
 
     const db = env.DB;
 
-    // 1. VERIFICAR TICKETS DISPONIBLES
+    // 1. Verificar tickets disponibles
     const placeholders = tickets.map(() => '?').join(',');
-    console.log('Verificando tickets:', tickets);
+    console.log('🔍 DEBUG - Consulta verificando tickets:', `SELECT COUNT(*) as count FROM tickets WHERE numero IN (${placeholders}) AND vendido = 1`);
     
     const vendidos = await db.prepare(
       `SELECT COUNT(*) as count FROM tickets WHERE numero IN (${placeholders}) AND vendido = 1`
     ).bind(...tickets).first();
 
-    console.log('Tickets ya vendidos:', vendidos.count);
+    console.log('🔍 DEBUG - Tickets vendidos encontrados:', vendidos.count);
 
     if (vendidos.count > 0) {
       return new Response(JSON.stringify({
@@ -31,34 +40,64 @@ export async function onRequestPost(context) {
       });
     }
 
-    // 2. CREAR LA ORDEN
-    console.log('Creando orden...');
-    const orden = await db.prepare(
-      `INSERT INTO ordenes (ticket_id, cliente_nombre, cliente_telefono, cliente_email, rifa_id, estado, total, metodo_pago, comprobante)
-       VALUES (?, ?, ?, ?, ?, 'pendiente', ?, ?, ?)`
-    ).bind(
-      tickets.join(','),  // ticket_id
-      nombre,             // cliente_nombre
-      telefono,           // cliente_telefono
-      email || '',        // cliente_email
-      parseInt(rifaId),   // rifa_id
-      parseFloat(total),  // total
-      metodoPago,         // metodo_pago
-      comprobante         // comprobante
+    // 2. Crear la orden
+    console.log('🔍 DEBUG - Creando orden en la base de datos...');
+    
+    const insertQuery = `INSERT INTO ordenes (ticket_id, cliente_nombre, cliente_telefono, cliente_email, rifa_id, estado, total, metodo_pago, comprobante)
+       VALUES (?, ?, ?, ?, ?, 'pendiente', ?, ?, ?)`;
+    
+    console.log('🔍 DEBUG - Query INSERT:', insertQuery);
+    console.log('🔍 DEBUG - Valores:', [
+      tickets.join(','),
+      nombre,
+      telefono,
+      email || '',
+      parseInt(rifaId),
+      parseFloat(total),
+      metodoPago,
+      comprobante
+    ]);
+
+    const orden = await db.prepare(insertQuery).bind(
+      tickets.join(','),
+      nombre,
+      telefono,
+      email || '',
+      parseInt(rifaId),
+      parseFloat(total),
+      metodoPago,
+      comprobante
     ).run();
 
     const ordenId = orden.meta.last_row_id;
-    console.log('✅ Orden creada con ID:', ordenId);
+    console.log('✅ DEBUG - Orden creada con ID:', ordenId);
 
-    // 3. ACTUALIZAR TICKETS
-    console.log('Actualizando tickets...');
+    // 3. Verificar que la orden se creó correctamente
+    const ordenCreada = await db.prepare('SELECT * FROM ordenes WHERE id = ?').bind(ordenId).first();
+    console.log('✅ DEBUG - Orden verificada:', ordenCreada);
+
+    if (!ordenCreada) {
+      throw new Error(`No se pudo verificar la orden creada con ID: ${ordenId}`);
+    }
+
+    // 4. Actualizar tickets
+    console.log('🔍 DEBUG - Actualizando tickets...');
+    console.log('🔍 DEBUG - Query UPDATE:', `UPDATE tickets SET vendido = 1, order_id = ? WHERE numero IN (${placeholders})`);
+    console.log('🔍 DEBUG - Valores UPDATE:', [ordenId, ...tickets]);
+
     const updateResult = await db.prepare(
       `UPDATE tickets SET vendido = 1, order_id = ? WHERE numero IN (${placeholders})`
     ).bind(ordenId, ...tickets).run();
 
-    console.log('✅ Tickets actualizados. Filas afectadas:', updateResult.meta.changes);
+    console.log('✅ DEBUG - Tickets actualizados. Filas afectadas:', updateResult.meta.changes);
 
-    // 4. ÉXITO
+    // 5. Verificar que los tickets se actualizaron
+    const ticketsActualizados = await db.prepare(
+      `SELECT numero, vendido, order_id FROM tickets WHERE numero IN (${placeholders})`
+    ).bind(...tickets).all();
+
+    console.log('✅ DEBUG - Tickets después de actualizar:', ticketsActualizados.results);
+
     return new Response(JSON.stringify({
       success: true,
       orderId: ordenId,
@@ -71,11 +110,18 @@ export async function onRequestPost(context) {
     });
 
   } catch (error) {
-    console.error('❌ ERROR en procesar-pago:', error);
+    console.error('❌ ERROR CRÍTICO en procesar-pago:');
+    console.error('❌ Mensaje:', error.message);
+    console.error('❌ Stack:', error.stack);
     
+    // Error más detallado para debugging
     return new Response(JSON.stringify({
       success: false,
-      error: 'Error: ' + error.message
+      error: 'Error del servidor: ' + error.message,
+      debug: {
+        message: error.message,
+        stack: error.stack
+      }
     }), {
       status: 500,
       headers: { 
