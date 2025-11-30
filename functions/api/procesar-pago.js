@@ -3,7 +3,7 @@ export async function onRequestPost(context) {
   
   try {
     const body = await request.json();
-    const { rifaId, tickets, nombre, telefono, email } = body;
+    const { rifaId, tickets, nombre, telefono, email, metodoPago, comprobante, total } = body;
 
     console.log('Datos recibidos para procesar pago:', { rifaId, tickets, nombre, telefono });
 
@@ -25,16 +25,19 @@ export async function onRequestPost(context) {
       });
     }
 
-    // 2. Crear la orden - SOLO con columnas que EXISTEN
+    // 2. Crear la orden - CON TODAS LAS COLUMNAS (incluyendo las nuevas)
     const orden = await db.prepare(
-      `INSERT INTO ordenes (ticket_id, cliente_nombre, cliente_telefono, cliente_email, rifa_id, estado)
-       VALUES (?, ?, ?, ?, ?, 'pendiente')`
+      `INSERT INTO ordenes (ticket_id, cliente_nombre, cliente_telefono, cliente_email, rifa_id, estado, total, metodo_pago, comprobante)
+       VALUES (?, ?, ?, ?, ?, 'pendiente', ?, ?, ?)`
     ).bind(
       tickets.join(','),  // ticket_id
       nombre,             // cliente_nombre
       telefono,           // cliente_telefono
       email || '',        // cliente_email
-      parseInt(rifaId)    // rifa_id
+      parseInt(rifaId),   // rifa_id
+      total,              // total (nueva columna)
+      metodoPago,         // metodo_pago (nueva columna)
+      comprobante         // comprobante (nueva columna)
     ).run();
 
     // 3. Obtener ID de la orden
