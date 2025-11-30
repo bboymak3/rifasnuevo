@@ -8,7 +8,6 @@
         cliente_nombre as nombre,           -- ← MAPEAR aquí
         cliente_telefono as telefono,       -- ← MAPEAR aquí  
         cliente_email as email,             -- ← MAPEAR aquí
-	ticket_id as tickets,           -- ← MOSTRAR los tickets aquí
         total, 
         metodo_pago, 
         comprobante, 
