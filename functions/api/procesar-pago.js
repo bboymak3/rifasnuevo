@@ -1,13 +1,13 @@
-export async function onRequestPost(context) {
+﻿export async function onRequestPost(context) {
   const { request, env } = context;
   
   try {
     console.log('=== INICIANDO PROCESAR-PAGO ===');
     
     const body = await request.json();
-    const { rifaId, tickets, nombre, telefono, email, metodoPago, comprobante, total } = body;
+    const { rifaId, ticket_id, nombre, telefono, email, metodoPago, comprobante, total } = body;
 
-    console.log('Datos recibidos:', { rifaId, tickets, nombre, telefono, total });
+    console.log('Datos recibidos:', { rifaId, ticket_id, nombre, telefono, total });
 
     const db = env.DB;
 
