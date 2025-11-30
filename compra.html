@@ -136,6 +136,29 @@
     </div>
   </div>
 
+  <script>
+    function seleccionarMetodo(metodo) {
+      // Ocultar todos los info-pago primero
+      document.querySelectorAll('.info-pago').forEach(function(element) {
+        element.style.display = 'none';
+      });
+      
+      // Remover la clase selected de todos los métodos
+      document.querySelectorAll('.metodo-pago').forEach(function(element) {
+        element.classList.remove('selected');
+      });
+      
+      // Marcar el radio button correspondiente
+      document.getElementById(metodo).checked = true;
+      
+      // Mostrar el info-pago del método seleccionado
+      document.getElementById('info' + metodo.charAt(0).toUpperCase() + metodo.slice(1)).style.display = 'block';
+      
+      // Agregar clase selected al método seleccionado
+      event.currentTarget.classList.add('selected');
+    }
+  </script>
+
   <script src="/js/compra.js"></script>
 </body>
 </html>
