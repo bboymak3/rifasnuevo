@@ -37,20 +37,20 @@ export async function onRequestPost(context) {
       `INSERT INTO ordenes (ticket_id, cliente_nombre, cliente_telefono, cliente_email, rifa_id, estado, total, metodo_pago, comprobante)
        VALUES (?, ?, ?, ?, ?, 'pendiente', ?, ?, ?)`
     ).bind(
-      tickets.join(','),
-      nombre,
-      telefono,
-      email || '',
-      parseInt(rifaId),
-      parseFloat(total),
-      metodoPago,
-      comprobante
+      tickets.join(','),  // ticket_id
+      nombre,             // cliente_nombre
+      telefono,           // cliente_telefono
+      email || '',        // cliente_email
+      parseInt(rifaId),   // rifa_id
+      parseFloat(total),  // total
+      metodoPago,         // metodo_pago
+      comprobante         // comprobante
     ).run();
 
     const ordenId = orden.meta.last_row_id;
     console.log('✅ Orden creada con ID:', ordenId);
 
-    // 3. MARCAR TICKETS COMO VENDIDOS
+    // 3. ACTUALIZAR TICKETS
     console.log('Actualizando tickets...');
     const updateResult = await db.prepare(
       `UPDATE tickets SET vendido = 1, order_id = ? WHERE numero IN (${placeholders})`
