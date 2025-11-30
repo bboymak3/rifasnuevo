@@ -52,36 +52,14 @@
 
               <h5 class="mt-4">💳 Método de Pago *</h5>
               
-              <div class="metodo-pago" onclick="seleccionarMetodo('transferencia')">
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="metodoPago" id="transferencia" value="transferencia">
-                  <label class="form-check-label fw-bold" for="transferencia">
-                    🏦 Transferencia Bancaria
-                  </label>
-                </div>
-                <div class="info-pago" id="infoTransferencia">
-                  <div class="alert alert-info">
-                    <strong>Datos para transferencia:</strong><br>
-                    Banco: Banesco<br>
-                    Cuenta: 0134-1234-5678<br>
-                    Titular: Juan Pérez<br>
-                    <strong>Enviar comprobante a:</strong> WhatsApp 0412-1234567
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">Número de comprobante *</label>
-                    <input type="text" class="form-control" id="comprobanteTransferencia" placeholder="Ej: T-123456">
-                  </div>
-                </div>
-              </div>
-
               <div class="metodo-pago" onclick="seleccionarMetodo('pago_movil')">
                 <div class="form-check">
-                  <input class="form-check-input" type="radio" name="metodoPago" id="pagoMovil" value="pago_movil">
-                  <label class="form-check-label fw-bold" for="pagoMovil">
+                  <input class="form-check-input" type="radio" name="metodoPago" id="pago_movil" value="pago_movil">
+                  <label class="form-check-label fw-bold" for="pago_movil">
                     📱 Pago Móvil
                   </label>
                 </div>
-                <div class="info-pago" id="infoPagoMovil">
+                <div class="info-pago" id="infoPago_movil">
                   <div class="alert alert-info">
                     <strong>Datos para Pago Móvil:</strong><br>
                     Teléfono: 0412-121212<br>
@@ -152,11 +130,17 @@
       document.getElementById(metodo).checked = true;
       
       // Mostrar el info-pago del método seleccionado
-      document.getElementById('info' + metodo.charAt(0).toUpperCase() + metodo.slice(1)).style.display = 'block';
+      const infoId = 'info' + metodo.charAt(0).toUpperCase() + metodo.slice(1);
+      document.getElementById(infoId).style.display = 'block';
       
       // Agregar clase selected al método seleccionado
       event.currentTarget.classList.add('selected');
     }
+
+    // Mostrar automáticamente el método de pago móvil al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+      seleccionarMetodo('pago_movil');
+    });
   </script>
 
   <script src="/js/compra.js"></script>
