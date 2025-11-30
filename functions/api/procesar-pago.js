@@ -50,10 +50,10 @@ export async function onRequestPost(context) {
     const ordenId = orden.meta.last_row_id;
     console.log('✅ Orden creada con ID:', ordenId);
 
-    // 3. ACTUALIZAR TICKETS
+    // 3. ACTUALIZAR TICKETS (corregido: cambiado order_id por id)
     console.log('Actualizando tickets...');
     const updateResult = await db.prepare(
-      `UPDATE tickets SET vendido = 1, order_id = ? WHERE numero IN (${placeholders})`
+      `UPDATE tickets SET vendido = 1, id = ? WHERE numero IN (${placeholders})`
     ).bind(ordenId, ...tickets).run();
 
     console.log('✅ Tickets actualizados. Filas afectadas:', updateResult.meta.changes);
