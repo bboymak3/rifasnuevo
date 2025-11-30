@@ -236,7 +236,7 @@
       <div class="card-body">
         <div class="text-center">
           <p class="mb-3">Los detalles de pago se mostrarán después de seleccionar tus números.</p>
-          <a href="/consultar-ordenes.html" class="btn btn-primary btn-custom btn-consulta">📱 Consultar Rifa con tu Teléfono</a>
+          <a href="/consultar-ordenes.html" class="btn btn-primary btn-custom btn-consulta">📱 Valida tus tickets con tu número de teléfono</a>
         </div>
       </div>
     </div>
@@ -350,8 +350,8 @@
       sessionStorage.setItem('selectedTickets', JSON.stringify(selectedNumbers));
       sessionStorage.setItem('totalAmount', (selectedNumbers.length * ticketPrice).toFixed(2));
       
-      // Redirigir a la página de procesamiento de pago
-      window.location.href = '/procesar-pago.html';
+      // Redirigir a la página de compra
+      window.location.href = '/compra.html';
     }
 
     // Función para limpiar la selección
