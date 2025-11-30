@@ -5,9 +5,10 @@
     const ordenes = await db.prepare(`
       SELECT 
         id, 
-        cliente_nombre as nombre,           -- ← MAPEAR aquí
-        cliente_telefono as telefono,       -- ← MAPEAR aquí  
-        cliente_email as email,             -- ← MAPEAR aquí
+        cliente_nombre as nombre,
+        cliente_telefono as telefono,  
+        cliente_email as email,
+        ticket_id,  -- ← AGREGAR ESTA LÍNEA
         total, 
         metodo_pago, 
         comprobante, 
