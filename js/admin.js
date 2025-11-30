@@ -1,5 +1,4 @@
- 
-document.addEventListener('DOMContentLoaded', function() {
+﻿document.addEventListener('DOMContentLoaded', function() {
   cargarPanelAdmin();
 });
 
@@ -11,7 +10,13 @@ async function cargarPanelAdmin() {
 
 async function cargarEstadisticas() {
   try {
-    const response = await fetch('/api/estadisticas');
+    const API_BASE_URL = window.location.origin;
+    const response = await fetch(`${API_BASE_URL}/api/estadisticas`);
+    
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+    
     const data = await response.json();
     
     if (data.success) {
@@ -27,7 +32,13 @@ async function cargarEstadisticas() {
 
 async function cargarTicketsVendidos() {
   try {
-    const response = await fetch('/api/tickets-vendidos');
+    const API_BASE_URL = window.location.origin;
+    const response = await fetch(`${API_BASE_URL}/api/tickets-vendidos`);
+    
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+    
     const data = await response.json();
     const container = document.getElementById('listaTicketsVendidos');
     
@@ -55,13 +66,19 @@ async function cargarTicketsVendidos() {
 
 async function cargarOrdenes() {
   try {
-    const response = await fetch('/api/ordenes');
+    const API_BASE_URL = window.location.origin;
+    const response = await fetch(`${API_BASE_URL}/api/ordenes`);
+    
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+    
     const data = await response.json();
     const tabla = document.getElementById('tablaOrdenes');
     
     if (data.success) {
       if (data.data.ordenes.length === 0) {
-        tabla.innerHTML = '<tr><td colspan="8" class="text-center">No hay órdenes registradas</td></tr>';
+        tabla.innerHTML = '<tr><td colspan="9" class="text-center">No hay órdenes registradas</td></tr>';
         return;
       }
       
@@ -77,9 +94,24 @@ async function cargarOrdenes() {
           <td>Bs. ${orden.total}</td>
           <td>${orden.metodo_pago}</td>
           <td>
-            <span class="badge ${orden.estado === 'pendiente' ? 'bg-warning' : 'bg-success'}">
+            <span class="badge ${getBadgeClass(orden.estado)}">
               ${orden.estado}
             </span>
+          </td>
+          <td>
+            <div class="btn-group btn-group-sm">
+              <button class="btn btn-success" onclick="cambiarEstado(${orden.id}, 'verificado')" ${orden.estado === 'verificado' ? 'disabled' : ''}>
+                ✅ Verificar
+              </button>
+              <button class="btn btn-danger" onclick="cambiarEstado(${orden.id}, 'rechazado')" ${orden.estado === 'rechazado' ? 'disabled' : ''}>
+                ❌ Rechazar
+              </button>
+              ${orden.estado !== 'pendiente' ? `
+                <button class="btn btn-warning" onclick="cambiarEstado(${orden.id}, 'pendiente')">
+                  🔄 Pendiente
+                </button>
+              ` : ''}
+            </div>
           </td>
           <td>${new Date(orden.fecha_creacion).toLocaleString()}</td>
         </tr>
@@ -88,7 +120,50 @@ async function cargarOrdenes() {
   } catch (error) {
     console.error('Error cargando órdenes:', error);
     document.getElementById('tablaOrdenes').innerHTML = 
-      '<tr><td colspan="8" class="text-center text-danger">Error cargando órdenes</td></tr>';
+      '<tr><td colspan="9" class="text-center text-danger">Error cargando órdenes</td></tr>';
+  }
+}
+
+function getBadgeClass(estado) {
+  switch(estado) {
+    case 'verificado': return 'badge-verificado';
+    case 'rechazado': return 'badge-rechazado';
+    default: return 'badge-pendiente';
+  }
+}
+
+async function cambiarEstado(ordenId, nuevoEstado) {
+  if (!confirm(`¿Estás seguro de cambiar el estado a "${nuevoEstado}"?`)) {
+    return;
+  }
+
+  try {
+    const API_BASE_URL = window.location.origin;
+    const response = await fetch(`${API_BASE_URL}/api/cambiar-estado`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        ordenId: ordenId, 
+        nuevoEstado: nuevoEstado 
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success) {
+        alert('✅ Estado actualizado correctamente');
+        cargarOrdenes(); // Recargar la tabla
+      } else {
+        alert('❌ Error: ' + data.error);
+      }
+    } else {
+      throw new Error(`Error ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Error cambiando estado:', error);
+    alert('❌ Error al cambiar el estado');
   }
 }
 
