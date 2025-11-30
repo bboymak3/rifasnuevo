@@ -56,36 +56,44 @@
       </div>
     </nav>
 
-    <div class="container mt-4">
-      <div class="row">
-        <div class="col-md-3">
-          <div class="stat-card">
-            <h5>📊 Resumen General</h5>
-            <div class="stats">
-              <div class="mb-2">
-                <strong>Total Tickets:</strong><br>
-                <span class="stat-number text-primary">100</span>
-              </div>
-              <div class="mb-2">
-                <strong>Vendidos:</strong><br>
-                <span class="stat-number text-success" id="ticketsVendidos">0</span>
-              </div>
-              <div class="mb-2">
-                <strong>Disponibles:</strong><br>
-                <span class="stat-number text-warning" id="ticketsDisponibles">100</span>
-              </div>
-              <div class="mb-2">
-                <strong>Recaudado:</strong><br>
-                <span class="stat-number text-info" id="totalRecaudado">Bs. 0.00</span>
-              </div>
-              <div class="mb-2">
-                <strong>Órdenes:</strong><br>
-                <span class="stat-number text-secondary" id="totalOrdenes">0</span>
-              </div>
-            </div>
-            <button class="btn btn-sm btn-primary w-100 mt-3" onclick="cargarEstadisticas()">
-              🔄 Actualizar
-            </button>
+    <div class="stat-card">
+  <h5>📊 Resumen General</h5>
+  <div class="stats">
+    <div class="mb-2">
+      <strong>Total Tickets:</strong><br>
+      <span class="stat-number text-primary">100</span>
+    </div>
+    <div class="mb-2">
+      <strong>Vendidos:</strong><br>
+      <span class="stat-number text-success" id="ticketsVendidos">0</span>
+    </div>
+    <div class="mb-2">
+      <strong>Disponibles:</strong><br>
+      <span class="stat-number text-warning" id="ticketsDisponibles">100</span>
+    </div>
+    <div class="mb-2">
+      <strong>Recaudado:</strong><br>
+      <span class="stat-number text-info" id="totalRecaudado">Bs. 0.00</span>
+    </div>
+    <div class="mb-2">
+      <strong>Órdenes:</strong><br>
+      <span class="stat-number text-secondary" id="totalOrdenes">0</span>
+    </div>
+  </div>
+  <button class="btn btn-sm btn-primary w-100 mt-2" onclick="cargarEstadisticas()">
+    🔄 Actualizar
+  </button>
+  
+  <!-- BOTÓN REINICIAR EN ROJO -->
+  <button class="btn btn-sm btn-danger w-100 mt-3" onclick="reiniciarRifa()">
+    🚨 REINICIAR RIFA
+  </button>
+  <small class="text-muted d-block mt-1">⚠️ Esto borrará todas las órdenes y liberará los tickets</small>
+</div>
+
+
+
+
           </div>
         </div>
 
