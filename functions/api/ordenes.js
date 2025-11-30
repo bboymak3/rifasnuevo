@@ -1,45 +1,35 @@
-// En tu backend (/api/ordenes)
-app.get('/api/ordenes', async (req, res) => {
+ 
+export async function onRequestGet(context) {
   try {
-    // Consulta con mapeo correcto de campos
-    const ordenes = await db.select(
-      'id',
-      'cliente_nombre as nombre',
-      'cliente_email as email', 
-      'cliente_telefono as telefono',
-      'total',
-      'metodo_pago',
-      'estado',
-      'fecha_creacion'
-    ).from('ordenes').orderBy('fecha_creacion', 'desc');
+    const db = context.env.DB;
     
-    // Procesar para incluir los tickets (necesitas otra consulta)
-    const ordenesConTickets = await Promise.all(
-      ordenes.map(async (orden) => {
-        // Consultar los tickets de esta orden
-        const tickets = await db('tickets')
-          .where('orden_id', orden.id)
-          .select('numero');
-        
-        return {
-          ...orden,
-          tickets: tickets.map(t => t.numero).join(', '), // o el formato que prefieras
-          // Si quieres el count en lugar de los números:
-          // tickets: tickets.length
-        };
-      })
-    );
-    
-    res.json({ 
-      success: true, 
-      data: { ordenes: ordenesConTickets } 
+    const ordenes = await db.prepare(`
+      SELECT id, nombre, telefono, email, tickets, total, metodo_pago, comprobante, estado, fecha_creacion
+      FROM ordenes 
+      ORDER BY fecha_creacion DESC
+    `).all();
+
+    return new Response(JSON.stringify({
+      success: true,
+      data: {
+        ordenes: ordenes.results
+      }
+    }), {
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
-    
   } catch (error) {
-    console.error('Error en /api/ordenes:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error interno del servidor' 
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
   }
-});
+}
