@@ -7,7 +7,6 @@ export async function onRequestPost(context) {
 
     const db = env.DB;
 
-    // Verificar tickets disponibles
     const placeholders = tickets.map(() => '?').join(',');
     const vendidos = await db.prepare(
       `SELECT COUNT(*) as count FROM tickets WHERE numero IN (${placeholders}) AND vendido = 1`
@@ -23,19 +22,20 @@ export async function onRequestPost(context) {
       });
     }
 
-    // ✅ INSERT usando SOLO las columnas que EXISTEN
-    const orden = await db.prepare(
-      `INSERT INTO ordenes (ticket_id, cliente_nombre, cliente_telefono, cliente_email, rifa_id, estado)
-       VALUES (?, ?, ?, ?, ?, 'pendiente')`
+    const ordenId = crypto.randomUUID();
+    
+    // ✅ USANDO TU ESTRUCTURA ACTUAL
+    await db.prepare(
+      `INSERT INTO ordenes (id, rifa_id, cliente_nombre, cliente_telefono, cliente_email, ticket_id, estado)
+       VALUES (?, ?, ?, ?, ?, ?, 'pendiente')`
     ).bind(
-      tickets.join(','),
+      ordenId, 
+      rifaId, 
       nombre, 
       telefono, 
       email || '', 
-      parseInt(rifaId)
+      tickets.join(',') // guardar tickets como string
     ).run();
-
-    const ordenId = orden.meta.last_row_id;
 
     await db.prepare(
       `UPDATE tickets SET vendido = 1, order_id = ? WHERE numero IN (${placeholders})`
