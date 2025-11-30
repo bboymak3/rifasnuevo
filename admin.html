@@ -21,6 +21,13 @@
       background: #dc3545;
       color: white;
     }
+    
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 100;
+    }
   </style>
 </head>
 <body>
@@ -81,23 +88,35 @@
       </div>
       <div class="col-md-6">
         <button class="btn btn-danger w-100 btn-custom" data-bs-toggle="modal" data-bs-target="#confirmModal">
-          🗑️ Eliminar Tablas
+          🗑️ Eliminar Todas las Órdenes
         </button>
       </div>
+    </div>
+
+    <!-- Información de órdenes -->
+    <div class="alert alert-info sticky-header">
+      <strong>📊 Total de órdenes: <span id="totalOrders">0</span></strong> | 
+      <strong>✅ Pagadas: <span id="paidOrders">0</span></strong> | 
+      <strong>⏳ Pendientes: <span id="pendingOrders">0</span></strong>
     </div>
 
     <!-- Tabla de órdenes -->
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">📋 Órdenes de Compra</h5>
-        <button class="btn btn-outline-primary btn-sm" onclick="exportarDatos()">
-          📤 Exportar Datos
-        </button>
+        <div>
+          <button class="btn btn-outline-success btn-sm me-2" onclick="agregarOrdenEjemplo()">
+            ➕ Agregar Ejemplo
+          </button>
+          <button class="btn btn-outline-primary btn-sm" onclick="exportarDatos()">
+            📤 Exportar Datos
+          </button>
+        </div>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-striped table-hover mb-0">
-            <thead class="table-dark sticky-top">
+            <thead class="table-dark">
               <tr>
                 <th><input type="checkbox" id="selectAll"></th>
                 <th>ID</th>
@@ -123,32 +142,31 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="confirmModalLabel">⚠️ Confirmar Eliminación</h5>
+          <h5 class="modal-title" id="confirmModalLabel">⚠️ Confirmar Eliminación Total</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p class="alert alert-warning">
-            <strong>¡ADVERTENCIA!</strong><br>
-            Esta acción <strong>ELIMINARÁ TODOS LOS DATOS</strong> de la rifa incluyendo:
+          <p class="alert alert-danger">
+            <strong>¡ELIMINACIÓN COMPLETA!</strong><br>
+            Esta acción <strong>ELIMINARÁ TODAS LAS ÓRDENES</strong> de la base de datos:
           </p>
           <ul>
-            <li>Todas las órdenes de compra</li>
-            <li>Historial de pagos</li>
-            <li>Estadísticas de ventas</li>
-            <li>Registro de tickets vendidos</li>
+            <li><strong id="ordersCount">0</strong> órdenes en total</li>
+            <li><strong id="paidCount">0</strong> órdenes pagadas</li>
+            <li><strong id="pendingCount">0</strong> órdenes pendientes</li>
           </ul>
           <p class="text-danger"><strong>Esta acción NO se puede deshacer.</strong></p>
           <div class="mb-3">
             <label for="confirmText" class="form-label">
-              Escribe <strong>"ELIMINAR"</strong> para confirmar:
+              Escribe <strong>"ELIMINAR TODAS LAS ÓRDENES"</strong> para confirmar:
             </label>
-            <input type="text" class="form-control" id="confirmText" placeholder="Escribe ELIMINAR aquí">
+            <input type="text" class="form-control" id="confirmText" placeholder="Escribe ELIMINAR TODAS LAS ÓRDENES aquí">
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">❌ Cancelar</button>
-          <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="eliminarTablas()" disabled>
-            🗑️ Eliminar Todo
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="eliminarTodasLasOrdenes()" disabled>
+            🗑️ Eliminar Todas las Órdenes
           </button>
         </div>
       </div>
@@ -158,22 +176,26 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Datos de ejemplo para demostración
+    // Datos de ejemplo más realistas
     let orders = [
       { id: 1, phone: '0412-1234567', tickets: [5, 12, 23], amount: 1497, status: 'Pendiente', date: '2024-01-15' },
       { id: 2, phone: '0414-7654321', tickets: [34, 45], amount: 998, status: 'Pagado', date: '2024-01-14' },
-      { id: 3, phone: '0426-5558888', tickets: [56], amount: 499, status: 'Pendiente', date: '2024-01-15' }
+      { id: 3, phone: '0426-5558888', tickets: [56], amount: 499, status: 'Pendiente', date: '2024-01-15' },
+      { id: 4, phone: '0412-9998888', tickets: [67, 78, 89], amount: 1497, status: 'Pagado', date: '2024-01-13' },
+      { id: 5, phone: '0424-1112233', tickets: [11, 22], amount: 998, status: 'Pendiente', date: '2024-01-16' },
+      { id: 6, phone: '0416-4445566', tickets: [33, 44, 55, 66], amount: 1996, status: 'Pagado', date: '2024-01-12' }
     ];
 
     // Inicialización
     document.addEventListener('DOMContentLoaded', function() {
       cargarOrdenes();
       actualizarEstadisticas();
+      actualizarModalInfo();
       
       // Validación del texto de confirmación
       document.getElementById('confirmText').addEventListener('input', function() {
         const confirmBtn = document.getElementById('confirmDeleteBtn');
-        confirmBtn.disabled = this.value !== 'ELIMINAR';
+        confirmBtn.disabled = this.value !== 'ELIMINAR TODAS LAS ÓRDENES';
       });
       
       // Seleccionar todos los checkboxes
@@ -183,21 +205,52 @@
           checkbox.checked = this.checked;
         });
       });
+
+      // Actualizar información del modal cuando se abre
+      document.getElementById('confirmModal').addEventListener('show.bs.modal', function() {
+        actualizarModalInfo();
+      });
     });
+
+    // Actualizar información en el modal
+    function actualizarModalInfo() {
+      const totalOrders = orders.length;
+      const paidOrders = orders.filter(order => order.status === 'Pagado').length;
+      const pendingOrders = totalOrders - paidOrders;
+
+      document.getElementById('ordersCount').textContent = totalOrders;
+      document.getElementById('paidCount').textContent = paidOrders;
+      document.getElementById('pendingCount').textContent = pendingOrders;
+    }
 
     // Cargar órdenes en la tabla
     function cargarOrdenes() {
       const tbody = document.getElementById('ordersTable');
       tbody.innerHTML = '';
 
+      if (orders.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td colspan="8" class="text-center text-muted py-4">
+            <h5>No hay órdenes registradas</h5>
+            <p>Usa el botón "Agregar Ejemplo" para cargar datos de prueba</p>
+          </td>
+        `;
+        tbody.appendChild(row);
+        return;
+      }
+
       orders.forEach(order => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td><input type="checkbox" class="order-checkbox" data-id="${order.id}"></td>
-          <td>${order.id}</td>
+          <td><strong>#${order.id}</strong></td>
           <td>${order.phone}</td>
-          <td>${order.tickets.join(', ')}</td>
-          <td>Bs. ${order.amount}</td>
+          <td>
+            <span class="badge bg-info">${order.tickets.length} tickets</span><br>
+            <small>${order.tickets.join(', ')}</small>
+          </td>
+          <td><strong>Bs. ${order.amount.toLocaleString()}</strong></td>
           <td>
             <span class="badge ${order.status === 'Pagado' ? 'bg-success' : 'bg-warning'}">
               ${order.status}
@@ -205,30 +258,45 @@
           </td>
           <td>${order.date}</td>
           <td>
-            <button class="btn btn-sm btn-outline-primary" onclick="editarOrden(${order.id})">
-              ✏️
+            <button class="btn btn-sm btn-outline-primary mb-1" onclick="editarOrden(${order.id})">
+              ✏️ Editar
             </button>
             <button class="btn btn-sm btn-outline-danger" onclick="eliminarOrden(${order.id})">
-              🗑️
+              🗑️ Eliminar
             </button>
           </td>
         `;
         tbody.appendChild(row);
       });
+
+      // Actualizar contadores de órdenes
+      actualizarContadoresOrdenes();
     }
 
-    // Actualizar estadísticas
+    // Actualizar contadores de órdenes
+    function actualizarContadoresOrdenes() {
+      const totalOrders = orders.length;
+      const paidOrders = orders.filter(order => order.status === 'Pagado').length;
+      const pendingOrders = totalOrders - paidOrders;
+
+      document.getElementById('totalOrders').textContent = totalOrders;
+      document.getElementById('paidOrders').textContent = paidOrders;
+      document.getElementById('pendingOrders').textContent = pendingOrders;
+    }
+
+    // Actualizar estadísticas generales
     function actualizarEstadisticas() {
-      const vendidos = orders.reduce((total, order) => 
-        order.status === 'Pagado' ? total + order.tickets.length : total, 0
-      );
+      const ticketsVendidos = orders
+        .filter(order => order.status === 'Pagado')
+        .reduce((total, order) => total + order.tickets.length, 0);
       
-      document.getElementById('ticketsVendidos').textContent = vendidos;
-      document.getElementById('ticketsDisponibles').textContent = 100 - vendidos;
-      document.getElementById('totalRecaudado').textContent = 
-        'Bs. ' + orders.reduce((total, order) => 
-          order.status === 'Pagado' ? total + order.amount : total, 0
-        );
+      const totalRecaudado = orders
+        .filter(order => order.status === 'Pagado')
+        .reduce((total, order) => total + order.amount, 0);
+
+      document.getElementById('ticketsVendidos').textContent = ticketsVendidos;
+      document.getElementById('ticketsDisponibles').textContent = 100 - ticketsVendidos;
+      document.getElementById('totalRecaudado').textContent = 'Bs. ' + totalRecaudado.toLocaleString();
     }
 
     // Marcar órdenes como pagadas
@@ -236,60 +304,101 @@
       const selectedOrders = document.querySelectorAll('#ordersTable input[type="checkbox"]:checked');
       
       if (selectedOrders.length === 0) {
-        alert('Por favor selecciona al menos una orden para marcar como pagada.');
+        alert('❌ Por favor selecciona al menos una orden para marcar como pagada.');
         return;
       }
 
+      let updatedCount = 0;
       selectedOrders.forEach(checkbox => {
         const orderId = parseInt(checkbox.dataset.id);
         const order = orders.find(o => o.id === orderId);
         if (order && order.status === 'Pendiente') {
           order.status = 'Pagado';
+          updatedCount++;
         }
       });
 
       cargarOrdenes();
       actualizarEstadisticas();
-      alert('Órdenes marcadas como pagadas correctamente.');
+      alert(`✅ ${updatedCount} órdenes marcadas como pagadas correctamente.`);
     }
 
-    // Eliminar tablas (función principal)
-    function eliminarTablas() {
+    // ELIMINAR TODAS LAS ÓRDENES - FUNCIÓN PRINCIPAL CORREGIDA
+    function eliminarTodasLasOrdenes() {
+      if (orders.length === 0) {
+        alert('ℹ️ No hay órdenes para eliminar.');
+        return;
+      }
+
       // Cerrar el modal
       const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
       modal.hide();
       
-      // Simular eliminación (en una aplicación real, aquí iría la llamada a la API)
+      // Mostrar mensaje de proceso
+      alert(`🗑️ Eliminando ${orders.length} órdenes...`);
+      
+      // ELIMINAR TODAS LAS ÓRDENES
+      orders = []; // Esto vacía completamente el array
+      
+      // Actualizar la interfaz
+      cargarOrdenes();
+      actualizarEstadisticas();
+      actualizarContadoresOrdenes();
+      
+      // Limpiar el campo de confirmación
+      document.getElementById('confirmText').value = '';
+      document.getElementById('confirmDeleteBtn').disabled = true;
+      
+      // Mostrar confirmación final
       setTimeout(() => {
-        orders = []; // Vaciar el array de órdenes
-        cargarOrdenes();
-        actualizarEstadisticas();
-        
-        // Mostrar confirmación
-        alert('✅ Todas las tablas han sido eliminadas correctamente.');
-        
-        // Limpiar el campo de confirmación
-        document.getElementById('confirmText').value = '';
-      }, 1000);
+        alert('✅ ¡Todas las órdenes han sido eliminadas correctamente!');
+      }, 500);
     }
 
     // Funciones auxiliares
+    function agregarOrdenEjemplo() {
+      const newId = orders.length > 0 ? Math.max(...orders.map(o => o.id)) + 1 : 1;
+      const newOrder = {
+        id: newId,
+        phone: '0412-' + Math.floor(1000000 + Math.random() * 9000000),
+        tickets: [Math.floor(Math.random() * 100) + 1],
+        amount: 499,
+        status: 'Pendiente',
+        date: new Date().toISOString().split('T')[0]
+      };
+      
+      orders.push(newOrder);
+      cargarOrdenes();
+      actualizarEstadisticas();
+      alert(`✅ Nueva orden de ejemplo #${newId} agregada.`);
+    }
+
     function editarOrden(id) {
-      alert(`Editar orden ${id} - Funcionalidad en desarrollo`);
+      const order = orders.find(o => o.id === id);
+      if (order) {
+        const newStatus = order.status === 'Pagado' ? 'Pendiente' : 'Pagado';
+        order.status = newStatus;
+        cargarOrdenes();
+        actualizarEstadisticas();
+        alert(`✅ Orden #${id} actualizada a: ${newStatus}`);
+      }
     }
 
     function eliminarOrden(id) {
-      if (confirm(`¿Estás seguro de que quieres eliminar la orden ${id}?`)) {
+      if (confirm(`¿Estás seguro de que quieres eliminar la orden #${id}?`)) {
         orders = orders.filter(order => order.id !== id);
         cargarOrdenes();
         actualizarEstadisticas();
-        alert('Orden eliminada correctamente.');
+        alert(`✅ Orden #${id} eliminada correctamente.`);
       }
     }
 
     function exportarDatos() {
-      alert('Exportando datos... Funcionalidad en desarrollo');
-      // En una aplicación real, aquí se generaría un archivo CSV o Excel
+      if (orders.length === 0) {
+        alert('❌ No hay órdenes para exportar.');
+        return;
+      }
+      alert(`📤 Exportando ${orders.length} órdenes... Funcionalidad en desarrollo`);
     }
   </script>
 </body>
