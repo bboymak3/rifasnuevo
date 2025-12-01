@@ -1,4 +1,4 @@
-export async function onRequest(context) {
+﻿export async function onRequest(context) {
   const { request, env } = context;
   
   try {
@@ -11,24 +11,28 @@ export async function onRequest(context) {
 
     const db = env.DB;
     
-    // Obtener todas las tasas configuradas
-    const tasas = await db.prepare(`
-      SELECT * FROM config_tasas 
-      ORDER BY tipo
-    `).all();
+    // ✅ CORREGIDO: Sin parámetros, no necesita .bind()
+    const tasas = await db.prepare(
+      'SELECT * FROM config_tasas ORDER BY tipo'
+    ).all();
 
+    console.log('Tasas encontradas:', tasas.results?.length || 0);
+    
     return new Response(JSON.stringify({
       success: true,
-      data: { tasas: tasas.results }
+      data: { tasas: tasas.results || [] }
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*' 
+      }
     });
 
   } catch (error) {
-    console.error('Error obteniendo tasas:', error);
+    console.error('Error en config-tasas:', error);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: 'Error interno del servidor' 
+      error: 'Error interno: ' + error.message 
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

@@ -1,4 +1,4 @@
-export async function onRequest(context) {
+﻿export async function onRequest(context) {
   const { request, env } = context;
   
   try {
@@ -12,6 +12,8 @@ export async function onRequest(context) {
     const url = new URL(request.url);
     const userId = url.searchParams.get('userId');
     
+    console.log('Historial recargas para userId:', userId);
+    
     if (!userId) {
       return new Response(JSON.stringify({ 
         success: false, 
@@ -24,25 +26,28 @@ export async function onRequest(context) {
 
     const db = env.DB;
     
-    // Obtener historial de recargas del usuario
-    const recargas = await db.prepare(`
-      SELECT r.* FROM recargas r
-      WHERE r.usuario_id = ?
-      ORDER BY r.fecha_solicitud DESC
-    `).all(userId);
+    // ✅ CORREGIDO: Usar .bind()
+    const recargas = await db.prepare(
+      'SELECT * FROM recargas WHERE usuario_id = ? ORDER BY fecha_solicitud DESC'
+    ).bind(userId).all();
 
+    console.log('Recargas encontradas:', recargas.results?.length || 0);
+    
     return new Response(JSON.stringify({
       success: true,
-      data: { recargas: recargas.results }
+      data: { recargas: recargas.results || [] }
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*' 
+      }
     });
 
   } catch (error) {
-    console.error('Error obteniendo historial:', error);
+    console.error('Error en historial-recargas:', error);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: 'Error interno del servidor' 
+      error: 'Error interno: ' + error.message 
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
