@@ -1,626 +1,184 @@
 ﻿<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel Admin - Rifa Moto 0KM</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    .stat-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    .stat-number { font-size: 2rem; font-weight: bold; }
-    .ticket-badge { background: #28a745; color: white; padding: 5px 10px; border-radius: 5px; display: inline-block; margin: 2px; }
-    .badge-pendiente { background-color: #ffc107; color: black; }
-    .badge-verificado { background-color: #28a745; color: white; }
-    .badge-rechazado { background-color: #dc3545; color: white; }
-    .badge-procesando { background-color: #17a2b8; color: white; }
-    .badge-completado { background-color: #28a745; color: white; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Rifas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; padding-top: 20px; }
+        .card { margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .badge-verificado { background-color: #28a745; }
+        .badge-rechazado { background-color: #dc3545; }
+        .badge-pendiente { background-color: #ffc107; }
+        .ticket-badge {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 3px 8px;
+            margin: 2px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
 </head>
-<body class="bg-light">
-  <nav class="navbar navbar-dark bg-dark">
+<body>
     <div class="container">
-      <span class="navbar-brand">👨‍💼 Panel Administrativo</span>
-      <a href="/" class="btn btn-outline-light btn-sm">← Volver al Sitio</a>
-    </div>
-  </nav>
-
-  <div class="container mt-4">
-    <div class="row">
-      <div class="col-md-3">
-        <div class="stat-card">
-          <h5>📊 Resumen General</h5>
-          <div class="stats">
-            <div class="mb-2">
-              <strong>Total Tickets:</strong><br>
-              <span class="stat-number text-primary">100</span>
+        <h1 class="mb-4">🎯 Panel de Administración</h1>
+        
+        <!-- Estadísticas -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">Tickets Vendidos</h5>
+                        <h2 id="ticketsVendidos">0</h2>
+                    </div>
+                </div>
             </div>
-            <div class="mb-2">
-              <strong>Vendidos:</strong><br>
-              <span class="stat-number text-success" id="ticketsVendidos">0</span>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">Tickets Disponibles</h5>
+                        <h2 id="ticketsDisponibles">0</h2>
+                    </div>
+                </div>
             </div>
-            <div class="mb-2">
-              <strong>Disponibles:</strong><br>
-              <span class="stat-number text-warning" id="ticketsDisponibles">100</span>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Recaudado</h5>
+                        <h2 id="totalRecaudado">Bs. 0.00</h2>
+                    </div>
+                </div>
             </div>
-            <div class="mb-2">
-              <strong>Recaudado:</strong><br>
-              <span class="stat-number text-info" id="totalRecaudado">Bs. 0.00</span>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Órdenes</h5>
+                        <h2 id="totalOrdenes">0</h2>
+                    </div>
+                </div>
             </div>
-            <div class="mb-2">
-              <strong>Órdenes:</strong><br>
-              <span class="stat-number text-secondary" id="totalOrdenes">0</span>
-            </div>
-            <div class="mb-2">
-              <strong>Solicitudes Recarga:</strong><br>
-              <span class="stat-number text-primary" id="totalSolicitudes">0</span>
-            </div>
-          </div>
-          <button class="btn btn-sm btn-primary w-100 mt-2" onclick="cargarEstadisticas()">
-            🔄 Actualizar
-          </button>
-          
-          <!-- BOTÓN REINICIAR EN ROJO -->
-          <button class="btn btn-sm btn-danger w-100 mt-3" onclick="reiniciarRifa()">
-            🚨 REINICIAR RIFA
-          </button>
-          <small class="text-muted d-block mt-1">⚠️ Esto borrará todas las órdenes y liberará los tickets</small>
         </div>
-      </div>
 
-      <div class="col-md-9">
+        <!-- Tickets Vendidos -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>🎫 Tickets Vendidos</h5>
+            </div>
+            <div class="card-body">
+                <div id="listaTicketsVendidos" class="text-center">
+                    Cargando...
+                </div>
+            </div>
+        </div>
+
+        <!-- Órdenes -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>📋 Órdenes de Compra</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Teléfono</th>
+                                <th>Tickets</th>
+                                <th>Total</th>
+                                <th>Método Pago</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaOrdenes">
+                            <tr><td colspan="9" class="text-center">Cargando órdenes...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Solicitudes de Recarga -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>💰 Solicitudes de Recarga</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Usuario</th>
+                                <th>Monto</th>
+                                <th>Créditos</th>
+                                <th>Método Pago</th>
+                                <th>Referencia</th>
+                                <th>Estado</th>
+                                <th>Fecha Solicitud</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaSolicitudesRecarga">
+                            <tr><td colspan="9" class="text-center">Cargando solicitudes...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuración de Tasas -->
         <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">🎫 Tickets Vendidos</h5>
-            <button class="btn btn-sm btn-primary" onclick="cargarTicketsVendidos()">
-              🔄 Actualizar
-            </button>
-          </div>
-          <div class="card-body">
-            <div id="listaTicketsVendidos">
-              <p class="text-center">Cargando tickets vendidos...</p>
+            <div class="card-header">
+                <h5>⚙️ Configuración de Tasas</h5>
             </div>
-          </div>
-        </div>
-
-        <div class="card mt-4">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">💰 Órdenes de Compra</h5>
-            <button class="btn btn-sm btn-primary" onclick="cargarOrdenes()">
-              🔄 Actualizar
-            </button>
-          </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th>ID Orden</th>
-                    <th>Cliente</th>
-                    <th>Teléfono</th>
-                    <th>Tickets</th>
-                    <th>Total</th>
-                    <th>Método Pago</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                    <th>Fecha</th>
-                  </tr>
-                </thead>
-                <tbody id="tablaOrdenes">
-                  <tr>
-                    <td colspan="9" class="text-center">Cargando órdenes...</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Descripción</th>
+                                <th>Valor</th>
+                                <th>Última Actualización</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaConfigTasas">
+                            <tr><td colspan="5" class="text-center">Cargando tasas...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-          </div>
         </div>
-
-        <!-- Sección de Solicitudes de Recarga (NUEVA) -->
-        <div class="card mt-4">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">💳 Solicitudes de Recarga</h5>
-            <button class="btn btn-sm btn-primary" onclick="cargarSolicitudesRecarga()">
-              🔄 Actualizar
-            </button>
-          </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Usuario</th>
-                    <th>Monto (Bs)</th>
-                    <th>Créditos</th>
-                    <th>Método</th>
-                    <th>Referencia</th>
-                    <th>Estado</th>
-                    <th>Fecha</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody id="tablaSolicitudesRecarga">
-                  <tr>
-                    <td colspan="9" class="text-center">Cargando solicitudes...</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sección de Configuración de Tasas (NUEVA) -->
-        <div class="card mt-4">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">⚙️ Configuración de Tasas</h5>
-            <button class="btn btn-sm btn-primary" onclick="cargarConfigTasas()">
-              🔄 Actualizar
-            </button>
-          </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th>Configuración</th>
-                    <th>Descripción</th>
-                    <th>Valor Actual</th>
-                    <th>Última Actualización</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody id="tablaConfigTasas">
-                  <tr>
-                    <td colspan="5" class="text-center">Cargando configuración...</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      cargarPanelAdmin();
-    });
-
-    async function cargarPanelAdmin() {
-      await cargarEstadisticas();
-      await cargarTicketsVendidos();
-      await cargarOrdenes();
-      await cargarSolicitudesRecarga();
-      await cargarConfigTasas();
-    }
-
-    async function cargarEstadisticas() {
-      try {
-        const API_BASE_URL = window.location.origin;
-        const response = await fetch(`${API_BASE_URL}/api/estadisticas`);
-        
-        if (!response.ok) {
-          throw new Error(`Error ${response.status}: ${response.statusText}`);
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- ⭐⭐ ARCHIVO ADMIN.JS CORREGIDO ⭐⭐ -->
+    <script src="/js/admin.js"></script>
+    
+    <script>
+        // Si aún no se carga, prueba cargar directamente
+        if (typeof cargarPanelAdmin === 'undefined') {
+            console.error('⚠️ admin.js no se cargó correctamente');
+            // Cargar dinámicamente
+            const script = document.createElement('script');
+            script.src = '/js/admin.js';
+            script.onload = function() {
+                console.log('✅ admin.js cargado dinámicamente');
+                if (typeof cargarPanelAdmin === 'function') {
+                    cargarPanelAdmin();
+                }
+            };
+            document.head.appendChild(script);
         }
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          document.getElementById('ticketsVendidos').textContent = data.data.vendidos;
-          document.getElementById('ticketsDisponibles').textContent = data.data.disponibles;
-          document.getElementById('totalRecaudado').textContent = `Bs. ${(data.data.recaudado || 0).toFixed(2)}`;
-          document.getElementById('totalOrdenes').textContent = data.data.totalOrdenes;
-          document.getElementById('totalSolicitudes').textContent = data.data.totalSolicitudes || 0;
-        }
-      } catch (error) {
-        console.error('Error cargando estadísticas:', error);
-      }
-    }
-
-    async function cargarTicketsVendidos() {
-      try {
-        const API_BASE_URL = window.location.origin;
-        const response = await fetch(`${API_BASE_URL}/api/tickets-vendidos`);
-        
-        if (!response.ok) {
-          throw new Error(`Error ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        const container = document.getElementById('listaTicketsVendidos');
-        
-        if (data.success) {
-          if (data.data.tickets.length === 0) {
-            container.innerHTML = '<p class="text-center text-muted">No hay tickets vendidos aún</p>';
-            return;
-          }
-          
-          const ticketsHTML = data.data.tickets.map(ticket => 
-            `<span class="ticket-badge" title="${ticket.nombre} - ${ticket.telefono}">${ticket.numero}</span>`
-          ).join('');
-          
-          container.innerHTML = `
-            <p><strong>Total vendidos:</strong> ${data.data.tickets.length}</p>
-            ${ticketsHTML}
-          `;
-        }
-      } catch (error) {
-        console.error('Error cargando tickets:', error);
-        document.getElementById('listaTicketsVendidos').innerHTML = 
-          '<p class="text-center text-danger">Error cargando tickets</p>';
-      }
-    }
-
-    async function cargarOrdenes() {
-      try {
-        const API_BASE_URL = window.location.origin;
-        const response = await fetch(`${API_BASE_URL}/api/ordenes`);
-        
-        if (!response.ok) {
-          throw new Error(`Error ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        const tabla = document.getElementById('tablaOrdenes');
-        
-        if (data.success) {
-          if (data.data.ordenes.length === 0) {
-            tabla.innerHTML = '<tr><td colspan="9" class="text-center">No hay órdenes registradas</td></tr>';
-            return;
-          }
-          
-          tabla.innerHTML = data.data.ordenes.map(orden => `
-            <tr>
-              <td><small>${orden.id}</small></td>
-              <td>
-                <strong>${orden.nombre}</strong><br>
-                <small class="text-muted">${orden.email || 'Sin email'}</small>
-              </td>
-              <td>${orden.telefono}</td>
-              <td>
-                <small>
-                  ${orden.ticket_id || 'N/A'}
-                </small>
-              </td>
-              <td>Bs. ${orden.total}</td>
-              <td>${orden.metodo_pago}</td>
-              <td>
-                <span class="badge ${getBadgeClass(orden.estado)}">
-                  ${orden.estado}
-                </span>
-              </td>
-              <td>
-                <div class="btn-group btn-group-sm">
-                  <button class="btn btn-success" onclick="cambiarEstado(${orden.id}, 'verificado')" ${orden.estado === 'verificado' ? 'disabled' : ''}>
-                    ✅ Verificar
-                  </button>
-                  <button class="btn btn-danger" onclick="cambiarEstado(${orden.id}, 'rechazado')" ${orden.estado === 'rechazado' ? 'disabled' : ''}>
-                    ❌ Rechazar
-                  </button>
-                  ${orden.estado !== 'pendiente' ? `
-                    <button class="btn btn-warning" onclick="cambiarEstado(${orden.id}, 'pendiente')">
-                      🔄 Pendiente
-                    </button>
-                  ` : ''}
-                </div>
-              </td>
-              <td>${new Date(orden.fecha_creacion).toLocaleString()}</td>
-            </tr>
-          `).join('');
-        }
-      } catch (error) {
-        console.error('Error cargando órdenes:', error);
-        document.getElementById('tablaOrdenes').innerHTML = 
-          '<tr><td colspan="9" class="text-center text-danger">Error cargando órdenes</td></tr>';
-      }
-    }
-
-    // FUNCIÓN NUEVA: Cargar Solicitudes de Recarga
-    async function cargarSolicitudesRecarga() {
-      try {
-        const API_BASE_URL = window.location.origin;
-        const response = await fetch(`${API_BASE_URL}/api/solicitudes-recarga`);
-        
-        if (!response.ok) {
-          throw new Error(`Error ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        const tabla = document.getElementById('tablaSolicitudesRecarga');
-        
-        if (data.success) {
-          if (data.data.solicitudes.length === 0) {
-            tabla.innerHTML = '<tr><td colspan="9" class="text-center">No hay solicitudes de recarga</td></tr>';
-            return;
-          }
-          
-          tabla.innerHTML = data.data.solicitudes.map(solicitud => `
-            <tr>
-              <td><small>${solicitud.id}</small></td>
-              <td>
-                <strong>${solicitud.usuario_nombre}</strong><br>
-                <small class="text-muted">${solicitud.usuario_email || 'Sin email'}</small>
-              </td>
-              <td>Bs. ${solicitud.monto}</td>
-              <td>${solicitud.creditos}</td>
-              <td>${solicitud.metodo_pago}</td>
-              <td><code>${solicitud.referencia || 'Sin referencia'}</code></td>
-              <td>
-                <span class="badge ${getRecargaBadgeClass(solicitud.estado)}">
-                  ${solicitud.estado}
-                </span>
-              </td>
-              <td>${new Date(solicitud.fecha_solicitud).toLocaleString()}</td>
-              <td>
-                <div class="btn-group btn-group-sm">
-                  ${solicitud.estado === 'pendiente' ? `
-                    <button class="btn btn-success" onclick="aprobarRecarga(${solicitud.id})">
-                      ✅ Aprobar
-                    </button>
-                    <button class="btn btn-danger" onclick="rechazarRecarga(${solicitud.id})">
-                      ❌ Rechazar
-                    </button>
-                  ` : ''}
-                  ${solicitud.estado !== 'pendiente' ? `
-                    <button class="btn btn-warning" onclick="resetearRecarga(${solicitud.id})">
-                      🔄 Resetear
-                    </button>
-                  ` : ''}
-                </div>
-              </td>
-            </tr>
-          `).join('');
-        }
-      } catch (error) {
-        console.error('Error cargando solicitudes de recarga:', error);
-        document.getElementById('tablaSolicitudesRecarga').innerHTML = 
-          '<tr><td colspan="9" class="text-center text-danger">Error cargando solicitudes</td></tr>';
-      }
-    }
-
-    // FUNCIÓN NUEVA: Cargar Configuración de Tasas
-    async function cargarConfigTasas() {
-      try {
-        const API_BASE_URL = window.location.origin;
-        const response = await fetch(`${API_BASE_URL}/api/config-tasas`);
-        
-        if (!response.ok) {
-          throw new Error(`Error ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        const tabla = document.getElementById('tablaConfigTasas');
-        
-        if (data.success) {
-          if (data.data.configuraciones.length === 0) {
-            tabla.innerHTML = '<tr><td colspan="5" class="text-center">No hay configuración disponible</td></tr>';
-            return;
-          }
-          
-          tabla.innerHTML = data.data.configuraciones.map(config => `
-            <tr>
-              <td><strong>${config.clave}</strong></td>
-              <td>${config.descripcion}</td>
-              <td>
-                ${config.tipo === 'moneda' ? 'Bs. ' : ''}
-                <span id="valor-${config.clave}">${config.valor}</span>
-                ${config.tipo === 'porcentaje' ? '%' : ''}
-              </td>
-              <td>${new Date(config.actualizado).toLocaleString()}</td>
-              <td>
-                <button class="btn btn-sm btn-primary" onclick="editarConfig('${config.clave}')">
-                  ✏️ Editar
-                </button>
-              </td>
-            </tr>
-          `).join('');
-        }
-      } catch (error) {
-        console.error('Error cargando configuración de tasas:', error);
-        document.getElementById('tablaConfigTasas').innerHTML = 
-          '<tr><td colspan="5" class="text-center text-danger">Error cargando configuración</td></tr>';
-      }
-    }
-
-    function getBadgeClass(estado) {
-      switch(estado) {
-        case 'verificado': return 'badge-verificado';
-        case 'rechazado': return 'badge-rechazado';
-        default: return 'badge-pendiente';
-      }
-    }
-
-    function getRecargaBadgeClass(estado) {
-      switch(estado) {
-        case 'completado': return 'badge-completado';
-        case 'rechazado': return 'badge-rechazado';
-        case 'procesando': return 'badge-procesando';
-        default: return 'badge-pendiente';
-      }
-    }
-
-    async function cambiarEstado(ordenId, nuevoEstado) {
-      if (!confirm(`¿Estás seguro de cambiar el estado a "${nuevoEstado}"?`)) {
-        return;
-      }
-
-      try {
-        const API_BASE_URL = window.location.origin;
-        const response = await fetch(`${API_BASE_URL}/api/cambiar-estado`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ 
-            ordenId: ordenId, 
-            nuevoEstado: nuevoEstado 
-          })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            alert('✅ Estado actualizado correctamente');
-            cargarOrdenes();
-            cargarEstadisticas();
-          } else {
-            alert('❌ Error: ' + data.error);
-          }
-        } else {
-          throw new Error(`Error ${response.status}`);
-        }
-      } catch (error) {
-        console.error('Error cambiando estado:', error);
-        alert('❌ Error al cambiar el estado');
-      }
-    }
-
-    // FUNCIONES NUEVAS: Manejo de Recargas
-    async function aprobarRecarga(solicitudId) {
-      if (!confirm('¿Aprobar esta solicitud de recarga?')) return;
-      
-      try {
-        const API_BASE_URL = window.location.origin;
-        const response = await fetch(`${API_BASE_URL}/api/aprobar-recarga`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ solicitudId })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-          alert('✅ Recarga aprobada correctamente');
-          cargarSolicitudesRecarga();
-          cargarEstadisticas();
-        } else {
-          alert('❌ Error: ' + data.error);
-        }
-      } catch (error) {
-        console.error('Error aprobando recarga:', error);
-        alert('❌ Error al aprobar la recarga');
-      }
-    }
-
-    async function rechazarRecarga(solicitudId) {
-      if (!confirm('¿Rechazar esta solicitud de recarga?')) return;
-      
-      try {
-        const API_BASE_URL = window.location.origin;
-        const response = await fetch(`${API_BASE_URL}/api/rechazar-recarga`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ solicitudId })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-          alert('✅ Recarga rechazada correctamente');
-          cargarSolicitudesRecarga();
-        } else {
-          alert('❌ Error: ' + data.error);
-        }
-      } catch (error) {
-        console.error('Error rechazando recarga:', error);
-        alert('❌ Error al rechazar la recarga');
-      }
-    }
-
-    async function resetearRecarga(solicitudId) {
-      if (!confirm('¿Resetear esta solicitud a estado pendiente?')) return;
-      
-      try {
-        const API_BASE_URL = window.location.origin;
-        const response = await fetch(`${API_BASE_URL}/api/resetear-recarga`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ solicitudId })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-          alert('✅ Solicitud reseteada a pendiente');
-          cargarSolicitudesRecarga();
-        } else {
-          alert('❌ Error: ' + data.error);
-        }
-      } catch (error) {
-        console.error('Error reseteando recarga:', error);
-        alert('❌ Error al resetear la solicitud');
-      }
-    }
-
-    // FUNCIÓN NUEVA: Editar Configuración
-    async function editarConfig(clave) {
-      const nuevoValor = prompt(`Ingrese nuevo valor para ${clave}:`, 
-        document.getElementById(`valor-${clave}`).textContent);
-      
-      if (nuevoValor === null) return;
-      
-      try {
-        const API_BASE_URL = window.location.origin;
-        const response = await fetch(`${API_BASE_URL}/api/editar-config`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ clave, valor: nuevoValor })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-          alert('✅ Configuración actualizada correctamente');
-          cargarConfigTasas();
-        } else {
-          alert('❌ Error: ' + data.error);
-        }
-      } catch (error) {
-        console.error('Error editando configuración:', error);
-        alert('❌ Error al actualizar la configuración');
-      }
-    }
-
-    // === FUNCIÓN REINICIAR RIFA ===
-    async function reiniciarRifa() {
-      const confirmacion1 = confirm('🚨 ¡ADVERTENCIA CRÍTICA!\n\n¿Estás ABSOLUTAMENTE seguro de que quieres REINICIAR toda la rifa?\n\n⚠️ Esto borrará:\n• Todas las órdenes de compra\n• Todo el historial de ventas\n• Todo el registro de recaudación\n\nLos tickets quedarán disponibles nuevamente.');
-      
-      if (!confirmacion1) return;
-
-      const confirmacion2 = prompt('Para confirmar el reinicio, escribe: "REINICIAR"');
-      
-      if (confirmacion2 !== 'REINICIAR') {
-        alert('❌ Reinicio cancelado. No se escribió la palabra correcta.');
-        return;
-      }
-
-      try {
-        const API_BASE_URL = window.location.origin;
-        const response = await fetch(`${API_BASE_URL}/api/reiniciar-rifa`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ 
-            confirmacion: 'CONFIRMAR_REINICIO'
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          alert('✅ ' + data.message + '\n\nTickets actualizados: ' + data.datos.ticketsActualizados + '\nÓrdenes eliminadas: ' + data.datos.ordenesEliminadas);
-          cargarPanelAdmin();
-        } else {
-          alert('❌ Error: ' + data.error);
-        }
-      } catch (error) {
-        console.error('Error reiniciando rifa:', error);
-        alert('❌ Error al reiniciar la rifa. Verifica la conexión.');
-      }
-    }
-
-    // Recargar automáticamente cada 30 segundos
-    setInterval(() => {
-      cargarPanelAdmin();
-    }, 30000);
-  </script>
+    </script>
 </body>
 </html>
