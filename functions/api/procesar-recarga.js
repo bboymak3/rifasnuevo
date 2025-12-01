@@ -1,7 +1,9 @@
-export async function onRequest(context) {
+﻿export async function onRequest(context) {
   const { request, env } = context;
   
   try {
+    console.log('=== PROCESAR RECARGA ===');
+    
     if (request.method !== 'POST') {
       return new Response(JSON.stringify({ success: false, error: 'Método no permitido' }), {
         status: 405,
@@ -9,7 +11,10 @@ export async function onRequest(context) {
       });
     }
 
-    const { recargaId, accion, adminId } = await request.json();
+    const body = await request.json();
+    console.log('Body recibido:', body);
+    
+    const { recargaId, accion, adminId } = body;
     
     if (!recargaId || !accion) {
       return new Response(JSON.stringify({ 
@@ -24,13 +29,13 @@ export async function onRequest(context) {
     const db = env.DB;
     
     // Obtener información de la recarga
-    const recarga = await db.prepare(`
-      SELECT r.*, r.creditos_solicitados as creditos
-      FROM recargas r 
-      WHERE r.id = ?
-    `).get(recargaId);
+    console.log('Buscando recarga ID:', recargaId);
+    const recarga = await db.prepare(
+      'SELECT * FROM recargas WHERE id = ?'
+    ).bind(recargaId).first();
 
     if (!recarga) {
+      console.log('Recarga no encontrada');
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'Recarga no encontrada' 
@@ -39,6 +44,8 @@ export async function onRequest(context) {
         headers: { 'Content-Type': 'application/json' }
       });
     }
+
+    console.log('Recarga encontrada:', recarga);
 
     if (recarga.estado !== 'pendiente') {
       return new Response(JSON.stringify({ 
@@ -51,36 +58,51 @@ export async function onRequest(context) {
     }
 
     if (accion === 'aprobada') {
-      // Aprobar recarga - sumar créditos al usuario
-      await db.prepare(`
-        UPDATE usuarios 
-        SET creditos = creditos + ? 
-        WHERE id = ?
-      `).run(recarga.creditos, recarga.usuario_id);
+      // Calcular créditos a aprobar (basado en tasa actual)
+      const tasa = await db.prepare(
+        'SELECT valor FROM config_tasas WHERE tipo = ?'
+      ).bind('bs_creditos').first();
+
+      const tasaBsCreditos = tasa ? tasa.valor : 250;
+      const creditosAprobados = Math.floor((recarga.monto * 100) / tasaBsCreditos);
+      
+      console.log('Aprobando créditos:', { monto: recarga.monto, tasa: tasaBsCreditos, creditos: creditosAprobados });
+
+      // Sumar créditos al usuario
+      await db.prepare(
+        'UPDATE usuarios SET creditos = creditos + ? WHERE id = ?'
+      ).bind(creditosAprobados, recarga.usuario_id).run();
+      
+      console.log('Créditos sumados al usuario:', recarga.usuario_id);
     }
 
     // Actualizar estado de la recarga
-    await db.prepare(`
-      UPDATE recargas 
-      SET estado = ?, fecha_procesado = CURRENT_TIMESTAMP, administrador_id = ?
-      WHERE id = ?
-    `).run(accion, adminId || null, recargaId);
+    await db.prepare(
+      'UPDATE recargas SET estado = ?, fecha_procesado = CURRENT_TIMESTAMP, administrador_id = ? WHERE id = ?'
+    ).bind(accion, adminId || null, recargaId).run();
+
+    console.log('Recarga actualizada a estado:', accion);
 
     return new Response(JSON.stringify({
       success: true,
       message: `Recarga ${accion === 'aprobada' ? 'aprobada' : 'rechazada'} correctamente`,
       data: {
-        creditosAprobados: accion === 'aprobada' ? recarga.creditos : 0
+        recargaId: recargaId,
+        nuevoEstado: accion,
+        creditosAprobados: accion === 'aprobada' ? Math.floor((recarga.monto * 100) / (tasa?.valor || 250)) : 0
       }
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
 
   } catch (error) {
     console.error('Error procesando recarga:', error);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: 'Error interno del servidor' 
+      error: 'Error interno: ' + error.message 
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
