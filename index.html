@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gran Rifa - viaje con make</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .ticket-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); 
+      gap: 6px; 
+      margin: 20px 0; 
+    }
+    .ticket-number { 
+      padding: 8px 4px; 
+      text-align: center; 
+      border: 2px solid #007bff; 
+      border-radius: 6px;
+      cursor: pointer; 
+      transition: all 0.3s; 
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+    .ticket-number:hover { background: #007bff; color: white; }
+    .ticket-number.selected { background: #28a745; color: white; border-color: #28a745; }
+    .ticket-number.vendido { background: #dc3545; color: white; border-color: #dc3545; cursor: not-allowed; }
+    .ticket-number.disponible { background: white; color: #007bff; }
+
+    /* Responsive para móviles */
+    @media (max-width: 768px) {
+      .ticket-grid {
+        grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+        gap: 4px;
+      }
+      .ticket-number {
+        padding: 6px 2px;
+        font-size: 0.8rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .ticket-grid {
+        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+        gap: 3px;
+      }
+      .ticket-number {
+        padding: 5px 1px;
+        font-size: 0.75rem;
+      }
+    }
+
+    .btn-consultar {
+      background: #007bff;
+      color: white;
+      font-size: 1.2rem;
+      font-weight: bold;
+      padding: 15px 30px;
+      border-radius: 10px;
+      transition: all 0.3s;
+    }
+    .btn-consultar:hover {
+      background: #0056b3;
+      color: white;
+      transform: translateY(-2px);
+    }
+    
+    /* Estilo para el botón de usuario */
+    .user-info {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 5px 15px;
+      margin-left: 10px;
+    }
+    
+    /* BOTONES GRANDES DEL CASINO - NUEVOS ESTILOS */
+    .btn-casino {
+      font-size: 1.5rem !important;
+      font-weight: bold !important;
+      padding: 20px 40px !important;
+      margin: 10px 5px !important;
+      border-radius: 15px !important;
+      transition: all 0.3s !important;
+      text-transform: uppercase !important;
+      letter-spacing: 1px !important;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2) !important;
+      border: none !important;
+      min-width: 250px !important;
+    }
+    
+    .btn-casino:hover {
+      transform: translateY(-5px) !important;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3) !important;
+    }
+    
+    .btn-casino:active {
+      transform: translateY(-2px) !important;
+    }
+    
+    .btn-dados {
+      background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%) !important;
+      color: #000 !important;
+      border: 3px solid #ff9800 !important;
+    }
+    
+    .btn-dados:hover {
+      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%) !important;
+      color: #000 !important;
+      border: 3px solid #f57c00 !important;
+    }
+    
+    .btn-recargar {
+      background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%) !important;
+      color: white !important;
+      border: 3px solid #1e7e34 !important;
+    }
+    
+    .btn-recargar:hover {
+      background: linear-gradient(135deg, #218838 0%, #155724 100%) !important;
+      color: white !important;
+      border: 3px solid #155724 !important;
+    }
+    
+    /* Sección de botones del casino */
+    .casino-section {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-radius: 20px;
+      padding: 40px 20px;
+      margin: 40px 0;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      border: 5px solid #0f3460;
+    }
+    
+    .casino-title {
+      color: white;
+      text-shadow: 0 2px 10px rgba(255,255,255,0.3);
+      font-size: 2.5rem;
+      margin-bottom: 30px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    .casino-subtitle {
+      color: #ffc107;
+      font-size: 1.3rem;
+      margin-bottom: 40px;
+      text-shadow: 0 2px 5px rgba(255,193,7,0.3);
+    }
+    
+    /* Estilo responsivo para botones grandes */
+    @media (max-width: 768px) {
+      .btn-casino {
+        font-size: 1.3rem !important;
+        padding: 18px 30px !important;
+        min-width: 200px !important;
+      }
+      
+      .casino-title {
+        font-size: 2rem;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .btn-casino {
+        font-size: 1.1rem !important;
+        padding: 15px 25px !important;
+        min-width: 180px !important;
+      }
+      
+      .casino-title {
+        font-size: 1.8rem;
+      }
+    }
+    
+    /* Nuevos estilos para autenticación */
+    .auth-buttons {
+      display: flex;
+      gap: 8px;
+      margin-right: 15px;
+    }
+    
+    .user-panel-nav {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-right: 15px;
+    }
+    
+    .user-credits-nav {
+      background: rgba(255, 215, 0, 0.2);
+      border: 1px solid #ffc107;
+      border-radius: 10px;
+      padding: 5px 10px;
+      color: #ffc107;
+      font-weight: bold;
+    }
+    
+    .user-name-nav {
+      color: white;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-dark bg-primary">
+    <div class="container">
+      <span class="navbar-brand">🏍️ Gran Rifa - Moto 0KM</span>
+      <div class="d-flex align-items-center gap-2">
+        <!-- Botones de Autenticación (aparecen cuando NO está logueado) -->
+        <div id="authButtons" class="auth-buttons">
+          <button class="btn btn-sm btn-outline-light" onclick="showAuthModal()">
+            <i class="fas fa-sign-in-alt me-1"></i> Ingresar
+          </button>
+          <button class="btn btn-sm btn-success" onclick="showAuthModal('register')">
+            <i class="fas fa-user-plus me-1"></i> Registrarse
+          </button>
+        </div>
+        
+        <!-- Panel de Usuario (aparece cuando SÍ está logueado) -->
+        <div id="userPanel" class="user-panel-nav" style="display: none;">
+          <span class="user-name-nav" id="userNameNav"></span>
+          <span class="user-credits-nav" id="userCreditsNav">0 créditos</span>
+          <div class="btn-group">
+            <a href="/juego-dados.html" class="btn btn-sm btn-warning">
+              <i class="fas fa-dice"></i> Jugar
+            </a>
+            <a href="/recarga.html" class="btn btn-sm btn-info">
+              <i class="fas fa-coins"></i> Recargar
+            </a>
+            <button class="btn btn-sm btn-outline-light" onclick="logout()" title="Cerrar sesión">
+              <i class="fas fa-sign-out-alt"></i>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Enlaces del casino -->
+        <div class="d-flex gap-2">
+          <a href="/admin.html" class="btn btn-outline-light btn-sm">👨‍💼 Admin</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <div class="text-center mb-4">
+      <h1 class="text-primary">🎉 GRAN RIFA 🎉</h1>
+      <h3>🏍️ viaje con make</h3>
+      <p class="lead">Precio por ticket: <strong>Bs. 499.00</strong></p>
+      <p class="lead">Precio en créditos: <strong id="precioCreditos">100 créditos</strong></p>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <h5>🎫 Total</h5>
+            <h3 class="text-primary" id="totalTickets">100</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <h5>✅ Vendidos</h5>
+            <h3 class="text-success" id="ticketsVendidos">0</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <h5>🟡 Disponibles</h5>
+            <h3 class="text-warning" id="ticketsDisponibles">100</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <h5>💰 Recaudado</h5>
+            <h3 class="text-info" id="totalRecaudado">Bs. 0</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h4 class="mb-0">🎯 Selecciona tus números de la suerte</h4>
+        <small class="text-muted">Solo se muestran números disponibles</small>
+      </div>
+      <div class="card-body">
+        <div class="ticket-grid" id="ticketGrid"></div>
+        
+        <div class="mt-3">
+          <strong>Tu selección:</strong>
+          <div id="selectedTickets" class="mt-2"></div>
+          <div class="mt-2">
+            <strong>Total a pagar: Bs. <span id="totalPagar">0.00</span></strong>
+          </div>
+          <div class="mt-1">
+            <small>Equivalente a: <span id="totalCreditosPagar">0</span> créditos</small>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <button class="btn btn-success btn-lg" onclick="procederPago()" id="btnPagar" disabled>
+            🛒 Proceder al Pago
+          </button>
+          <button class="btn btn-outline-secondary btn-lg" onclick="limpiarSeleccion()">
+            🗑️ Limpiar Selección
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- NUEVA SECCIÓN: BOTONES GRANDES DEL CASINO -->
+    <div class="casino-section text-center">
+      <h2 class="casino-title">🎰 CASINO PREMIUM 🎰</h2>
+      <p class="casino-subtitle">Gana créditos y participa en la rifa GRATIS</p>
+      
+      <div class="row justify-content-center">
+        <div class="col-lg-4 col-md-6 mb-4">
+          <a href="/juego-dados.html" class="btn btn-dados btn-casino">
+            🎲 JUGAR DADOS
+            <br>
+            <small class="fs-6">Gana hasta 10x tus créditos</small>
+          </a>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-4">
+          <a href="/recarga.html" class="btn btn-recargar btn-casino">
+            💰 RECARGAR CRÉDITOS
+            <br>
+            <small class="fs-6">Bs. 250 = 100 créditos</small>
+          </a>
+        </div>
+      </div>
+      
+      <div class="mt-4">
+        <p class="text-light">
+          <strong>✨ ¿Cómo funciona?</strong><br>
+          1. Juega en el casino y gana créditos<br>
+          2. Usa tus créditos para comprar tickets de la rifa<br>
+          3. ¡Participa y gana la moto 0KM!
+        </p>
+      </div>
+    </div>
+
+    <!-- Botón para consultar tickets -->
+    <div class="text-center mt-4 mb-5">
+      <a href="consultar-ordenes.html" class="btn btn-consultar btn-lg">
+        📱 Consultar tus Tickets con tu Número de Teléfono
+      </a>
+    </div>
+  </div>
+
+  <!-- Modal de Autenticación -->
+  <div class="modal fade" id="authModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-light">
+        <div class="modal-header">
+          <h5 class="modal-title" id="authModalTitle">🔐 Autenticación</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <ul class="nav nav-tabs mb-3" id="authTabs">
+            <li class="nav-item">
+              <button class="nav-link active" data-bs-target="#loginTab" data-bs-toggle="tab">Iniciar Sesión</button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" data-bs-target="#registerTab" data-bs-toggle="tab">Registrarse</button>
+            </li>
+          </ul>
+          
+          <div class="tab-content">
+            <!-- LOGIN TAB -->
+            <div class="tab-pane fade show active" id="loginTab">
+              <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" id="loginEmail" placeholder="tu@email.com">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Contraseña</label>
+                <input type="password" class="form-control" id="loginPassword" placeholder="Tu contraseña">
+              </div>
+              <button class="btn btn-primary w-100" onclick="login()">
+                <i class="fas fa-sign-in-alt me-2"></i> Ingresar
+              </button>
+            </div>
+            
+            <!-- REGISTER TAB -->
+            <div class="tab-pane fade" id="registerTab">
+              <div class="mb-3">
+                <label class="form-label">Nombre Completo</label>
+                <input type="text" class="form-control" id="registerName" placeholder="Juan Pérez">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Teléfono</label>
+                <input type="tel" class="form-control" id="registerPhone" placeholder="0412-1234567">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" id="registerEmail" placeholder="tu@email.com">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Contraseña</label>
+                <input type="password" class="form-control" id="registerPassword" placeholder="Mínimo 6 caracteres">
+              </div>
+              <button class="btn btn-success w-100" onclick="register()">
+                <i class="fas fa-user-plus me-2"></i> Crear Cuenta
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    // Sistema de Autenticación para index.html
+    
+    let currentUser = null;
+
+    // Verificar sesión al cargar
+    document.addEventListener('DOMContentLoaded', function() {
+      checkUserSession();
+      cargarPrecioCreditos();
+    });
+
+    // Verificar si hay usuario logueado
+    async function checkUserSession() {
+      const savedUser = localStorage.getItem('casinoUser');
+      if (savedUser) {
+        try {
+          currentUser = JSON.parse(savedUser);
+          await showUserPanel();
+        } catch (e) {
+          console.error('Error cargando usuario:', e);
+          localStorage.removeItem('casinoUser');
+        }
+      }
+    }
+
+    // Mostrar panel de usuario en navbar
+    async function showUserPanel() {
+      if (!currentUser) return;
+      
+      document.getElementById('authButtons').style.display = 'none';
+      document.getElementById('userPanel').style.display = 'flex';
+      
+      // Mostrar solo primer nombre
+      const primerNombre = currentUser.nombre.split(' ')[0];
+      document.getElementById('userNameNav').textContent = `Hola, ${primerNombre}`;
+      document.getElementById('userCreditsNav').textContent = `${currentUser.creditos.toLocaleString()} créditos`;
+    }
+
+    // Mostrar modal de autenticación
+    function showAuthModal(tab = 'login') {
+      const authModal = new bootstrap.Modal(document.getElementById('authModal'));
+      
+      // Cambiar a la pestaña especificada
+      if (tab === 'register') {
+        const registerTab = document.querySelector('[data-bs-target="#registerTab"]');
+        if (registerTab) {
+          registerTab.click();
+        }
+      } else {
+        const loginTab = document.querySelector('[data-bs-target="#loginTab"]');
+        if (loginTab) {
+          loginTab.click();
+        }
+      }
+      
+      authModal.show();
+    }
+
+    // Cerrar sesión
+    function logout() {
+      if (confirm('¿Estás seguro de cerrar sesión?')) {
+        currentUser = null;
+        localStorage.removeItem('casinoUser');
+        document.getElementById('authButtons').style.display = 'flex';
+        document.getElementById('userPanel').style.display = 'none';
+        alert('Sesión cerrada correctamente');
+      }
+    }
+
+    // Función de login
+    async function login() {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      
+      if (!email || !password) {
+        alert('Por favor completa todos los campos');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          currentUser = data.data;
+          localStorage.setItem('casinoUser', JSON.stringify(currentUser));
+          bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
+          await showUserPanel();
+          alert('¡Sesión iniciada correctamente!');
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error al iniciar sesión');
+      }
+    }
+
+    // Función de registro
+    async function register() {
+      const nombre = document.getElementById('registerName').value;
+      const telefono = document.getElementById('registerPhone').value;
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+      
+      if (!nombre || !email || !password) {
+        alert('Por favor completa todos los campos obligatorios');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/registro', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, telefono, email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          currentUser = data.data;
+          localStorage.setItem('casinoUser', JSON.stringify(currentUser));
+          bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
+          await showUserPanel();
+          alert('¡Cuenta creada exitosamente! Has recibido 100 créditos de bienvenida.');
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error al crear la cuenta');
+      }
+    }
+
+    async function cargarPrecioCreditos() {
+      try {
+        const response = await fetch('/api/config-tasas');
+        const data = await response.json();
+        
+        if (data.success) {
+          const tasaRifa = data.data.tasas.find(t => t.tipo === 'rifa_ticket');
+          if (tasaRifa) {
+            document.getElementById('precioCreditos').textContent = `${tasaRifa.valor} créditos`;
+          }
+        }
+      } catch (error) {
+        console.error('Error cargando precio en créditos:', error);
+      }
+    }
+  </script>
+</body>
+</html>

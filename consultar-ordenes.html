@@ -1,0 +1,162 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultar Estado de Orden - Rifa Moto 0KM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .badge-pendiente { background-color: #ffc107; color: black; }
+        .badge-verificado { background-color: #28a745; color: white; }
+        .badge-rechazado { background-color: #dc3545; color: white; }
+        .orden-card { border-left: 4px solid; margin-bottom: 15px; }
+        .orden-pendiente { border-left-color: #ffc107; }
+        .orden-verificada { border-left-color: #28a745; }
+        .orden-rechazada { border-left-color: #dc3545; }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container">
+            <span class="navbar-brand">🔍 Consultar Estado de Orden</span>
+            <div>
+                <a href="/" class="btn btn-outline-light btn-sm">🏠 Inicio</a>
+                <a href="/admin.html" class="btn btn-outline-light btn-sm">👨‍💼 Admin</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">📞 Consulta tu orden por teléfono</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="telefono" class="form-label">Número de teléfono:</label>
+                            <input type="tel" class="form-control" id="telefono" 
+                                   placeholder="Ej: 0412-1234567" required>
+                            <div class="form-text">Ingresa el mismo número que usaste al comprar.</div>
+                        </div>
+                        <button class="btn btn-primary w-100" onclick="buscarOrdenes()">
+                            🔍 Buscar Mis Órdenes
+                        </button>
+                    </div>
+                </div>
+
+                <div id="resultado" class="mt-4" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">📋 Resultados de tu búsqueda</h5>
+                        </div>
+                        <div class="card-body" id="listaOrdenes">
+                            <!-- Aquí se cargan las órdenes -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-body text-center text-muted">
+                        <small>
+                            ¿Problemas con tu consulta?<br>
+                            Contacta al administrador: 
+                            <a href="tel:0412-1234567">0412-1234567</a>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function buscarOrdenes() {
+            const telefono = document.getElementById('telefono').value.trim();
+            const resultadoDiv = document.getElementById('resultado');
+            const listaOrdenes = document.getElementById('listaOrdenes');
+
+            if (!telefono) {
+                alert('⚠️ Por favor ingresa tu número de teléfono');
+                return;
+            }
+
+            try {
+                listaOrdenes.innerHTML = '<p class="text-center">🔍 Buscando tus órdenes...</p>';
+                resultadoDiv.style.display = 'block';
+
+                const response = await fetch('/api/buscar-ordenes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ telefono: telefono })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.data.ordenes.length === 0) {
+                        listaOrdenes.innerHTML = `
+                            <div class="text-center text-muted">
+                                <p>📭 No se encontraron órdenes con el teléfono: <strong>${telefono}</strong></p>
+                                <small>Verifica que el número sea correcto o contacta al administrador.</small>
+                            </div>
+                        `;
+                    } else {
+                        listaOrdenes.innerHTML = data.data.ordenes.map(orden => `
+                            <div class="orden-card orden-${orden.estado} p-3 bg-white rounded">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h6>Orden #${orden.id}</h6>
+                                        <p class="mb-1"><strong>Tickets:</strong> ${orden.tickets}</p>
+                                        <p class="mb-1"><strong>Total:</strong> Bs. ${orden.total}</p>
+                                        <p class="mb-1"><strong>Método:</strong> ${orden.metodo_pago}</p>
+                                        <p class="mb-0"><strong>Fecha:</strong> ${new Date(orden.fecha_creacion).toLocaleString()}</p>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <span class="badge ${getBadgeClass(orden.estado)}">
+                                            ${orden.estado.toUpperCase()}
+                                        </span>
+                                        ${orden.comprobante ? `
+                                            <p class="mt-2"><small><strong>Comprobante:</strong> ${orden.comprobante}</small></p>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                } else {
+                    listaOrdenes.innerHTML = `
+                        <div class="text-center text-danger">
+                            <p>❌ Error: ${data.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error buscando órdenes:', error);
+                listaOrdenes.innerHTML = `
+                    <div class="text-center text-danger">
+                        <p>❌ Error de conexión. Intenta nuevamente.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function getBadgeClass(estado) {
+            switch(estado) {
+                case 'verificado': return 'badge-verificado';
+                case 'rechazado': return 'badge-rechazado';
+                default: return 'badge-pendiente';
+            }
+        }
+
+        // Permitir buscar con Enter
+        document.getElementById('telefono').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                buscarOrdenes();
+            }
+        });
+    </script>
+</body>
+</html>

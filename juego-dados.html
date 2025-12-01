@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Juego de Dados - Casino Rifas</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .dado {
+      width: 80px;
+      height: 80px;
+      background: white;
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: bold;
+      color: #1a1a2e;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      margin: 10px;
+    }
+    
+    .dado-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 20px 0;
+    }
+    
+    .player-area {
+      background: rgba(255,255,255,0.1);
+      border-radius: 15px;
+      padding: 20px;
+      margin: 10px 0;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    
+    .rolling {
+      animation: roll 1s ease-in-out infinite;
+    }
+    
+    @keyframes roll {
+      0% { transform: rotate(0deg) scale(1); }
+      25% { transform: rotate(90deg) scale(1.1); }
+      50% { transform: rotate(180deg) scale(1.2); }
+      75% { transform: rotate(270deg) scale(1.1); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+    
+    .resultado {
+      font-size: 1.5rem;
+      font-weight: bold;
+      padding: 15px;
+      border-radius: 10px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    
+    .ganador {
+      background: rgba(40, 167, 69, 0.3);
+      border: 2px solid #28a745;
+      color: #28a745;
+    }
+    
+    .perdedor {
+      background: rgba(220, 53, 69, 0.3);
+      border: 2px solid #dc3545;
+      color: #dc3545;
+    }
+    
+    .empate {
+      background: rgba(255, 193, 7, 0.3);
+      border: 2px solid #ffc107;
+      color: #ffc107;
+    }
+    
+    .apuesta-control {
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    
+    .btn-dados {
+      background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border-radius: 10px;
+      transition: all 0.3s;
+    }
+    
+    .btn-dados:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(238, 90, 36, 0.4);
+    }
+    
+    .btn-dados:disabled {
+      background: #6c757d;
+      transform: none;
+      box-shadow: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-dark bg-dark">
+    <div class="container">
+      <span class="navbar-brand">🎲 Juego de Dados</span>
+      <div>
+        <a href="/" class="btn btn-outline-light btn-sm me-2">🏠 Inicio</a>
+        <a href="/recarga.html" class="btn btn-outline-warning btn-sm">💰 Recargar</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <!-- Panel de Usuario -->
+        <div class="card bg-dark mb-4">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h5 id="userName">Jugador</h5>
+                <small class="text-muted" id="userEmail">usuario@ejemplo.com</small>
+              </div>
+              <div class="text-end">
+                <h4 class="text-warning" id="userCredits">0</h4>
+                <small class="text-muted">Créditos disponibles</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controles de Apuesta -->
+        <div class="apuesta-control">
+          <h4 class="text-center mb-4">🎯 Control de Apuesta</h4>
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Cantidad a Apostar</label>
+              <input type="number" class="form-control form-control-lg" id="apuestaInput" 
+                     min="5" max="100" value="10">
+              <div class="form-text text-light">
+                Mínimo: <span id="apuestaMin">5</span> - Máximo: <span id="apuestaMax">100</span> créditos
+              </div>
+            </div>
+            <div class="col-md-6 text-center">
+              <button class="btn btn-dados btn-lg w-100" id="btnJugar" onclick="jugarDados()">
+                🎲 JUGAR
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Área de Juego -->
+        <div class="player-area">
+          <h4 class="text-center mb-4">🎮 En Juego</h4>
+          
+          <!-- Jugador -->
+          <div class="mb-4">
+            <h5 class="text-info">👤 TUS DADOS</h5>
+            <div class="dado-container">
+              <div class="dado" id="usuarioDado1">?</div>
+              <div class="dado" id="usuarioDado2">?</div>
+            </div>
+            <div class="text-center mt-2">
+              <strong>Total: <span id="usuarioTotal">0</span></strong>
+            </div>
+          </div>
+
+          <!-- Computadora -->
+          <div>
+            <h5 class="text-danger">🤖 COMPUTADORA</h5>
+            <div class="dado-container">
+              <div class="dado" id="computadoraDado1">?</div>
+              <div class="dado" id="computadoraDado2">?</div>
+            </div>
+            <div class="text-center mt-2">
+              <strong>Total: <span id="computadoraTotal">0</span></strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resultado -->
+        <div class="resultado" id="resultadoDiv" style="display: none;">
+          <div id="resultadoTexto"></div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="text-center mt-4" id="accionesDiv" style="display: none;">
+          <button class="btn btn-dados me-2" id="btnNuevaRonda" onclick="jugarDados()">
+            🔄 Jugar Otra Ronda
+          </button>
+          <button class="btn btn-outline-light" onclick="resetJuego()">
+            🏁 Nuevo Juego
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let configTasas = {};
+    let juegoActivo = false;
+
+    // Inicializar juego
+    document.addEventListener('DOMContentLoaded', function() {
+      checkUserSession();
+      cargarConfigTasas();
+    });
+
+    // Verificar sesión de usuario
+    function checkUserSession() {
+      const savedUser = localStorage.getItem('casinoUser');
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        showUserInfo();
+      } else {
+        alert('Debes iniciar sesión para jugar');
+        window.location.href = '/';
+      }
+    }
+
+    // Mostrar información del usuario
+    function showUserInfo() {
+      document.getElementById('userName').textContent = currentUser.nombre;
+      document.getElementById('userEmail').textContent = currentUser.email;
+      document.getElementById('userCredits').textContent = currentUser.creditos.toLocaleString();
+    }
+
+    // Cargar configuración de tasas
+    async function cargarConfigTasas() {
+      try {
+        const response = await fetch('/api/config-tasas');
+        const data = await response.json();
+        
+        if (data.success) {
+          data.data.tasas.forEach(tasa => {
+            configTasas[tasa.tipo] = tasa.valor;
+          });
+          
+          // Actualizar controles de apuesta
+          document.getElementById('apuestaInput').min = configTasas.dados_apuesta_min || 5;
+          document.getElementById('apuestaInput').max = configTasas.dados_apuesta_max || 100;
+          document.getElementById('apuestaMin').textContent = configTasas.dados_apuesta_min || 5;
+          document.getElementById('apuestaMax').textContent = configTasas.dados_apuesta_max || 100;
+        }
+      } catch (error) {
+        console.error('Error cargando tasas:', error);
+      }
+    }
+
+    // Función principal para jugar
+    async function jugarDados() {
+      if (juegoActivo) return;
+      
+      const apuesta = parseInt(document.getElementById('apuestaInput').value);
+      const apuestaMin = configTasas.dados_apuesta_min || 5;
+      const apuestaMax = configTasas.dados_apuesta_max || 100;
+
+      // Validaciones
+      if (apuesta < apuestaMin || apuesta > apuestaMax) {
+        alert(`La apuesta debe estar entre ${apuestaMin} y ${apuestaMax} créditos`);
+        return;
+      }
+
+      if (currentUser.creditos < apuesta) {
+        alert('No tienes suficientes créditos para esta apuesta');
+        return;
+      }
+
+      juegoActivo = true;
+      document.getElementById('btnJugar').disabled = true;
+
+      // Animación de dados girando
+      iniciarAnimacionDados();
+
+      try {
+        const response = await fetch('/api/jugar-dados', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            apuesta: apuesta,
+            userId: currentUser.id
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Mostrar resultado después de la animación
+          setTimeout(() => {
+            mostrarResultado(data.data);
+            juegoActivo = false;
+          }, 2000);
+        } else {
+          alert('Error: ' + data.error);
+          juegoActivo = false;
+          document.getElementById('btnJugar').disabled = false;
+        }
+      } catch (error) {
+        console.error('Error jugando:', error);
+        alert('Error de conexión');
+        juegoActivo = false;
+        document.getElementById('btnJugar').disabled = false;
+      }
+    }
+
+    // Animación de dados girando
+    function iniciarAnimacionDados() {
+      const dados = [
+        'usuarioDado1', 'usuarioDado2', 
+        'computadoraDado1', 'computadoraDado2'
+      ];
+
+      dados.forEach(dadoId => {
+        const dado = document.getElementById(dadoId);
+        dado.textContent = '?';
+        dado.classList.add('rolling');
+      });
+
+      document.getElementById('usuarioTotal').textContent = '?';
+      document.getElementById('computadoraTotal').textContent = '?';
+      document.getElementById('resultadoDiv').style.display = 'none';
+      document.getElementById('accionesDiv').style.display = 'none';
+    }
+
+    // Mostrar resultado del juego
+    function mostrarResultado(resultado) {
+      // Detener animación
+      const dados = [
+        'usuarioDado1', 'usuarioDado2', 
+        'computadoraDado1', 'computadoraDado2'
+      ];
+
+      dados.forEach(dadoId => {
+        document.getElementById(dadoId).classList.remove('rolling');
+      });
+
+      // Mostrar valores reales
+      document.getElementById('usuarioDado1').textContent = resultado.usuario.dados.dado1;
+      document.getElementById('usuarioDado2').textContent = resultado.usuario.dados.dado2;
+      document.getElementById('computadoraDado1').textContent = resultado.computadora.dados.dado1;
+      document.getElementById('computadoraDado2').textContent = resultado.computadora.dados.dado2;
+      
+      document.getElementById('usuarioTotal').textContent = resultado.usuario.total;
+      document.getElementById('computadoraTotal').textContent = resultado.computadora.total;
+
+      // Mostrar resultado
+      const resultadoDiv = document.getElementById('resultadoDiv');
+      const resultadoTexto = document.getElementById('resultadoTexto');
+      const accionesDiv = document.getElementById('accionesDiv');
+
+      resultadoDiv.style.display = 'block';
+      accionesDiv.style.display = 'block';
+
+      let mensaje = '';
+      let clase = '';
+
+      if (resultado.resultado === 'doble_seis') {
+        mensaje = '🎯 ¡Doble 6! Se juega otra ronda';
+        clase = 'empate';
+        document.getElementById('btnNuevaRonda').style.display = 'block';
+      } else if (resultado.resultado === 'ganador') {
+        mensaje = `🎉 ¡GANASTE! +${resultado.creditosGanados} créditos`;
+        clase = 'ganador';
+        document.getElementById('btnNuevaRonda').style.display = 'none';
+      } else if (resultado.resultado === 'perdedor') {
+        mensaje = '❌ ¡Perdiste! La computadora ganó';
+        clase = 'perdedor';
+        document.getElementById('btnNuevaRonda').style.display = 'none';
+      } else if (resultado.resultado === 'empate') {
+        mensaje = '⚖️ ¡Empate! Se juega otra ronda';
+        clase = 'empate';
+        document.getElementById('btnNuevaRonda').style.display = 'block';
+      }
+
+      resultadoTexto.textContent = mensaje;
+      resultadoDiv.className = `resultado ${clase}`;
+
+      // Actualizar saldo del usuario
+      currentUser.creditos = resultado.nuevoSaldo;
+      localStorage.setItem('casinoUser', JSON.stringify(currentUser));
+      document.getElementById('userCredits').textContent = currentUser.creditos.toLocaleString();
+
+      // Habilitar botón de jugar
+      document.getElementById('btnJugar').disabled = false;
+    }
+
+    // Reiniciar juego
+    function resetJuego() {
+      document.getElementById('usuarioDado1').textContent = '?';
+      document.getElementById('usuarioDado2').textContent = '?';
+      document.getElementById('computadoraDado1').textContent = '?';
+      document.getElementById('computadoraDado2').textContent = '?';
+      document.getElementById('usuarioTotal').textContent = '0';
+      document.getElementById('computadoraTotal').textContent = '0';
+      document.getElementById('resultadoDiv').style.display = 'none';
+      document.getElementById('accionesDiv').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

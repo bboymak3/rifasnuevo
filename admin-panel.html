@@ -1,0 +1,63 @@
+﻿<!-- Sección de Solicitudes de Recarga -->
+<div class="card mt-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">💳 Solicitudes de Recarga</h5>
+    <button class="btn btn-sm btn-primary" onclick="cargarSolicitudesRecarga()">
+      🔄 Actualizar
+    </button>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Usuario</th>
+            <th>Monto (Bs)</th>
+            <th>Créditos</th>
+            <th>Método</th>
+            <th>Referencia</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tablaSolicitudesRecarga">
+          <tr>
+            <td colspan="9" class="text-center">Cargando solicitudes...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Sección de Configuración de Tasas -->
+<div class="card mt-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">⚙️ Configuración de Tasas</h5>
+    <button class="btn btn-sm btn-primary" onclick="cargarConfigTasas()">
+      🔄 Actualizar
+    </button>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Configuración</th>
+            <th>Descripción</th>
+            <th>Valor Actual</th>
+            <th>Última Actualización</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tablaConfigTasas">
+          <tr>
+            <td colspan="5" class="text-center">Cargando configuración...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
