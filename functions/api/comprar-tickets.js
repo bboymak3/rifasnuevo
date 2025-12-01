@@ -1,11 +1,10 @@
 ﻿export async function onRequest(context) {
   const { request, env } = context;
   
-  console.log('=== INICIANDO PROCESO DE COMPRA ===');
+  console.log('=== COMPRA CON CRÉDITOS ===');
   
   try {
     if (request.method !== 'POST') {
-      console.log('❌ Método no permitido:', request.method);
       return new Response(JSON.stringify({ success: false, error: 'Método no permitido' }), {
         status: 405,
         headers: { 'Content-Type': 'application/json' }
@@ -13,23 +12,15 @@
     }
 
     const body = await request.json();
-    console.log('📦 Body recibido:', JSON.stringify(body));
+    console.log('📦 Datos recibidos:', body);
     
     const { userId, nombre, telefono, email, tickets, totalCreditos } = body;
     
-    // Validación de parámetros
-    const errores = [];
-    if (!userId) errores.push('userId');
-    if (!nombre) errores.push('nombre');
-    if (!telefono) errores.push('telefono');
-    if (!tickets) errores.push('tickets');
-    if (!totalCreditos) errores.push('totalCreditos');
-    
-    if (errores.length > 0) {
-      console.log('❌ Faltan parámetros:', errores);
+    // Validación
+    if (!userId || !nombre || !telefono || !tickets || !totalCreditos) {
       return new Response(JSON.stringify({ 
         success: false, 
-        error: `Faltan parámetros requeridos: ${errores.join(', ')}` 
+        error: 'Faltan datos: userId, nombre, telefono, tickets, totalCreditos' 
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
@@ -38,11 +29,10 @@
 
     const db = env.DB;
     
-    console.log(`👤 Buscando usuario ID: ${userId}`);
-    
-    // Verificar créditos del usuario
+    // 1. Verificar usuario
+    console.log(`👤 Verificando usuario ID: ${userId}`);
     const usuario = await db.prepare(
-      'SELECT id, creditos, nombre as nombre_usuario FROM usuarios WHERE id = ?'
+      'SELECT id, nombre, creditos FROM usuarios WHERE id = ?'
     ).bind(userId).first();
 
     if (!usuario) {
@@ -56,142 +46,150 @@
       });
     }
 
-    console.log(`✅ Usuario encontrado: ${usuario.nombre_usuario}, Créditos: ${usuario.creditos}`);
+    console.log(`✅ Usuario: ${usuario.nombre}, Créditos: ${usuario.creditos}`);
     
+    // 2. Verificar créditos
     if (usuario.creditos < totalCreditos) {
       console.log(`❌ Créditos insuficientes: ${usuario.creditos} < ${totalCreditos}`);
       return new Response(JSON.stringify({ 
         success: false, 
-        error: `Créditos insuficientes. Necesitas ${totalCreditos} créditos, pero solo tienes ${usuario.creditos}` 
+        error: `Créditos insuficientes. Tienes ${usuario.creditos} créditos, necesitas ${totalCreditos}` 
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    // Verificar que los tickets estén disponibles
-    const ticketsArray = tickets.split(',').map(t => t.trim());
+    // 3. Procesar tickets
+    const ticketsArray = tickets.split(',').map(t => t.trim()).filter(t => t !== '');
     console.log(`🎫 Tickets a comprar: ${ticketsArray.length} - ${ticketsArray.join(', ')}`);
     
-    // Verificar disponibilidad de cada ticket
+    if (ticketsArray.length === 0) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'No se especificaron tickets válidos' 
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 4. Verificar disponibilidad
     const ticketsNoDisponibles = [];
-    
     for (const ticketNum of ticketsArray) {
-      const ticketExistente = await db.prepare(
-        'SELECT id, numero, orden_id FROM tickets WHERE numero = ?'
+      const ticket = await db.prepare(
+        'SELECT numero, estado, usuario_id FROM tickets WHERE numero = ?'
       ).bind(ticketNum).first();
       
-      if (ticketExistente) {
-        console.log(`❌ Ticket ${ticketNum} ya existe`);
-        ticketsNoDisponibles.push(ticketNum);
+      if (!ticket) {
+        console.log(`❌ Ticket ${ticketNum} no existe`);
+        ticketsNoDisponibles.push(`${ticketNum} (no existe)`);
+      } else if (ticket.estado !== 'disponible' || ticket.usuario_id) {
+        console.log(`❌ Ticket ${ticketNum} no disponible (estado: ${ticket.estado}, usuario_id: ${ticket.usuario_id})`);
+        ticketsNoDisponibles.push(`${ticketNum} (no disponible)`);
       }
     }
     
     if (ticketsNoDisponibles.length > 0) {
       return new Response(JSON.stringify({ 
         success: false, 
-        error: `Los siguientes tickets no están disponibles: ${ticketsNoDisponibles.join(', ')}` 
+        error: `Tickets no disponibles: ${ticketsNoDisponibles.join(', ')}` 
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    // Obtener tasa de conversión para registro
-    console.log('💰 Obteniendo tasa de ticket...');
+    // 5. Obtener tasa para cálculo en Bs
     const tasa = await db.prepare(
-      'SELECT valor FROM config_tasas WHERE tipo = ?'
-    ).bind('rifa_ticket').first();
-
-    const precioPorTicket = tasa ? tasa.valor : 100;
-    console.log(`💰 Precio por ticket: ${precioPorTicket} créditos`);
-    
-    // Calcular monto en Bs (para registro histórico)
-    const tasaBsCreditos = await db.prepare(
       'SELECT valor FROM config_tasas WHERE tipo = ?'
     ).bind('bs_creditos').first();
     
-    const valorBsPor100Creditos = tasaBsCreditos ? tasaBsCreditos.valor : 250;
-    const montoBs = (totalCreditos * valorBsPor100Creditos) / 100;
-    console.log(`💰 Monto equivalente en Bs: ${montoBs} (${valorBsPor100Creditos} Bs = 100 créditos)`);
+    const tasaBs = tasa ? tasa.valor : 250;
+    const montoBs = (totalCreditos * tasaBs) / 100;
+    console.log(`💰 Conversión: ${totalCreditos} créditos = ${montoBs} Bs (tasa: ${tasaBs} Bs/100cr)`);
 
-    // INICIAR TRANSACCIÓN MANUAL
+    // 6. TRANSACCIÓN
     console.log('🔄 Iniciando transacción...');
     
     try {
-      // 1. Descontar créditos del usuario
+      // A. Descontar créditos
       const nuevoSaldo = usuario.creditos - totalCreditos;
       console.log(`💳 Descontando créditos: ${usuario.creditos} - ${totalCreditos} = ${nuevoSaldo}`);
       
-      const updateUsuario = await db.prepare(
+      await db.prepare(
         'UPDATE usuarios SET creditos = ? WHERE id = ?'
       ).bind(nuevoSaldo, userId).run();
       
-      if (!updateUsuario.success) {
-        throw new Error('Error al actualizar créditos del usuario');
-      }
       console.log('✅ Créditos descontados');
       
-      // 2. Crear orden de compra
-      console.log('📝 Creando orden de compra...');
+      // B. Crear orden
+      console.log('📝 Creando orden...');
       const ordenResult = await db.prepare(
-        `INSERT INTO ordenes (usuario_id, nombre, telefono, email, tickets, total_creditos, total_bs, metodo_pago, estado) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'creditos', 'verificado')`
+        `INSERT INTO ordenes (
+          usuario_id, nombre, telefono, email, tickets, 
+          cantidad_tickets, total_creditos, total_bs, metodo_pago, estado
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'creditos', 'verificado')`
       ).bind(
-        userId, 
-        nombre, 
-        telefono, 
-        email || '', 
-        tickets, 
-        totalCreditos, 
+        userId,
+        nombre,
+        telefono,
+        email || '',
+        tickets,
+        ticketsArray.length,
+        totalCreditos,
         montoBs
       ).run();
-      
-      if (!ordenResult.success) {
-        throw new Error('Error al crear la orden');
-      }
       
       const ordenId = ordenResult.meta.last_row_id;
       console.log(`✅ Orden creada ID: ${ordenId}`);
       
-      // 3. Asignar tickets al usuario
-      console.log('🎫 Asignando tickets...');
-      let ticketsAsignados = 0;
+      // C. Calcular créditos por ticket
+      const creditosPorTicket = Math.floor(totalCreditos / ticketsArray.length);
+      
+      // D. Actualizar tickets
+      console.log('🎫 Actualizando tickets...');
+      let ticketsActualizados = 0;
       
       for (const ticketNum of ticketsArray) {
-        const insertTicket = await db.prepare(
-          `INSERT INTO tickets (numero, orden_id, usuario_id, nombre, telefono, estado, fecha_compra) 
-           VALUES (?, ?, ?, ?, ?, 'vendido', CURRENT_TIMESTAMP)`
-        ).bind(ticketNum, ordenId, userId, nombre, telefono).run();
-        
-        if (insertTicket.success) {
-          ticketsAsignados++;
-        } else {
-          console.error(`❌ Error insertando ticket ${ticketNum}`);
-        }
-      }
-      
-      console.log(`✅ Tickets asignados: ${ticketsAsignados} de ${ticketsArray.length}`);
-      
-      if (ticketsAsignados !== ticketsArray.length) {
-        // Rollback parcial - marcar orden como error
         await db.prepare(
-          'UPDATE ordenes SET estado = ? WHERE id = ?'
-        ).bind('error', ordenId).run();
+          `UPDATE tickets SET 
+            orden_id = ?, 
+            usuario_id = ?, 
+            nombre = ?, 
+            telefono = ?, 
+            estado = 'vendido',
+            creditos = ?,
+            fecha_compra = CURRENT_TIMESTAMP
+           WHERE numero = ?`
+        ).bind(
+          ordenId,
+          userId,
+          nombre,
+          telefono,
+          creditosPorTicket,
+          ticketNum
+        ).run();
         
-        throw new Error(`Error asignando tickets. Solo se asignaron ${ticketsAsignados} de ${ticketsArray.length}`);
+        ticketsActualizados++;
+        console.log(`✅ Ticket ${ticketNum} actualizado`);
       }
       
-      console.log('🎉 Compra procesada exitosamente!');
+      console.log(`✅ Tickets actualizados: ${ticketsActualizados}/${ticketsArray.length}`);
+      
+      // 7. ÉXITO
+      console.log('🎉 ¡Compra exitosa!');
       
       return new Response(JSON.stringify({
         success: true,
-        message: 'Compra procesada exitosamente',
+        message: 'Compra realizada exitosamente',
         data: {
           ordenId: ordenId,
-          ticketsAsignados: ticketsArray,
-          creditosRestantes: nuevoSaldo,
+          tickets: ticketsArray,
+          cantidadTickets: ticketsArray.length,
           totalCreditos: totalCreditos,
+          creditosRestantes: nuevoSaldo,
+          creditosPorTicket: creditosPorTicket,
           montoEquivalenteBs: montoBs
         },
         redirect: `/compra-exitosa.html?orden=${ordenId}&tickets=${tickets}`
@@ -201,9 +199,20 @@
           'Access-Control-Allow-Origin': '*'
         }
       });
-
+      
     } catch (transaccionError) {
       console.error('❌ Error en transacción:', transaccionError);
+      
+      // Rollback: devolver créditos
+      try {
+        await db.prepare(
+          'UPDATE usuarios SET creditos = ? WHERE id = ?'
+        ).bind(usuario.creditos, userId).run();
+        console.log('🔄 Rollback de créditos realizado');
+      } catch (rollbackError) {
+        console.error('❌ Error en rollback:', rollbackError);
+      }
+      
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'Error en el proceso de compra: ' + transaccionError.message 
@@ -214,9 +223,7 @@
     }
 
   } catch (error) {
-    console.error('❌ Error general en compra:', error);
-    console.error('Stack trace:', error.stack);
-    
+    console.error('❌ Error general:', error);
     return new Response(JSON.stringify({ 
       success: false, 
       error: 'Error interno del servidor: ' + error.message 
