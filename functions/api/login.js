@@ -9,15 +9,12 @@
       });
     }
 
-    const { email, telefono, password } = await request.json();
+    const { email, password } = await request.json();
     
-    // Aceptar email O teléfono
-    const loginId = email || telefono;
-    
-    if (!loginId || !password) {
+    if (!email || !password) {
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Faltan credenciales' 
+        error: 'Faltan campos: email y password' 
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
@@ -26,11 +23,11 @@
 
     const db = env.DB;
     
-    // Buscar usuario por email o teléfono
+    // IMPORTANTE: Cambia 'password_hash' por 'password'
     const usuario = await db.prepare(`
-      SELECT id, nombre, email, telefono, password_hash, creditos 
-      FROM usuarios WHERE email = ? OR telefono = ?
-    `).get(loginId, loginId);
+      SELECT id, nombre, email, telefono, password, creditos 
+      FROM usuarios WHERE email = ?
+    `).bind(email).first();
 
     if (!usuario) {
       return new Response(JSON.stringify({ 
@@ -42,8 +39,8 @@
       });
     }
 
-    // Verificar contraseña (considera usar bcrypt en producción)
-    if (usuario.password_hash !== password) {
+    // Verificar contraseña - usa 'password' no 'password_hash'
+    if (usuario.password !== password) {
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'Credenciales incorrectas' 
