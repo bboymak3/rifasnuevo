@@ -1,17 +1,22 @@
-﻿export async function onRequestGet(context) {
+﻿export async function onRequest(context) {
+  const { env } = context;
+  
   try {
-    const db = context.env.DB;
+    const db = env.DB;
     
+    // Obtener todas las órdenes
     const ordenes = await db.prepare(`
       SELECT 
         id, 
-        cliente_nombre as nombre,
-        cliente_telefono as telefono,  
-        cliente_email as email,
-        ticket_id,  -- ← AGREGAR ESTA LÍNEA
-        total, 
+        usuario_id,
+        nombre,
+        telefono,  
+        email,
+        tickets,
+        cantidad_tickets,
+        total_creditos,
+        total_bs,
         metodo_pago, 
-        comprobante, 
         estado, 
         fecha_creacion
       FROM ordenes 

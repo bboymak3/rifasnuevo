@@ -1,4 +1,4 @@
-const CONFIG = {
+﻿const CONFIG = {
   precioTicket: 499.00,
   rifaId: 140
 };
@@ -109,13 +109,59 @@ function procederPago() {
     return;
   }
 
-  sessionStorage.setItem('ticketsSeleccionados', JSON.stringify(estadoApp.ticketsSeleccionados));
-  sessionStorage.setItem('totalPago', estadoApp.total.toString());
-  
-  window.location.href = `/compra.html?tickets=${estadoApp.ticketsSeleccionados.join(',')}&total=${estadoApp.total}`;
+  // ✅ Cambia esto: NO uses precios en Bs, usa créditos
+  // Primero verificar si el usuario tiene créditos suficientes
+  verificarCreditosUsuario();
+}
+
+async function verificarCreditosUsuario() {
+  try {
+    // Obtener el userId del usuario logueado (esto deberías obtenerlo de localStorage o session)
+    const savedUser = localStorage.getItem('casinoUser');
+    if (!savedUser) {
+      alert('⚠️ Debes iniciar sesión para comprar tickets');
+      window.location.href = '/login.html';
+      return;
+    }
+
+    const usuario = JSON.parse(savedUser);
+    const userId = usuario.id;
+    
+    // Verificar créditos del usuario
+    const response = await fetch('/api/verificar-creditos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: userId })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      const creditosUsuario = data.data.usuario.creditos;
+      const precioPorTicket = data.data.precios.precioPorTicket;
+      const totalCreditos = estadoApp.ticketsSeleccionados.length * precioPorTicket;
+      
+      if (creditosUsuario < totalCreditos) {
+        alert(`❌ Créditos insuficientes. Necesitas ${totalCreditos} créditos, pero solo tienes ${creditosUsuario}.`);
+        return;
+      }
+      
+      // Guardar en sessionStorage
+      sessionStorage.setItem('ticketsSeleccionados', JSON.stringify(estadoApp.ticketsSeleccionados));
+      sessionStorage.setItem('totalPago', estadoApp.total.toString());
+      
+      // Redirigir a compra.html con parámetros
+      window.location.href = `/compra.html?tickets=${estadoApp.ticketsSeleccionados.join(',')}&total=${totalCreditos}`;
+    } else {
+      alert('Error verificando créditos: ' + data.error);
+    }
+  } catch (error) {
+    console.error('Error verificando créditos:', error);
+    alert('Error al verificar créditos. Por favor intenta nuevamente.');
+  }
 }
 
 setInterval(() => {
   cargarEstadisticas();
   cargarTicketsDisponibles();
-}, 30000); 
+}, 30000);
