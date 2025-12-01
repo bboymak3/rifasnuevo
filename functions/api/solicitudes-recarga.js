@@ -1,4 +1,4 @@
-export async function onRequest(context) {
+﻿export async function onRequest(context) {
   const { request, env } = context;
   
   try {
@@ -11,7 +11,7 @@ export async function onRequest(context) {
 
     const db = env.DB;
     
-    // Obtener todas las solicitudes de recarga con información de usuario
+    // Obtener todas las solicitudes con info de usuario
     const solicitudes = await db.prepare(`
       SELECT 
         r.*,
@@ -23,18 +23,23 @@ export async function onRequest(context) {
       ORDER BY r.fecha_solicitud DESC
     `).all();
 
+    console.log('Solicitudes encontradas:', solicitudes.results?.length || 0);
+    
     return new Response(JSON.stringify({
       success: true,
-      data: { solicitudes: solicitudes.results }
+      data: { solicitudes: solicitudes.results || [] }
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*' 
+      }
     });
 
   } catch (error) {
-    console.error('Error obteniendo solicitudes:', error);
+    console.error('Error en solicitudes-recarga:', error);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: 'Error interno del servidor' 
+      error: 'Error interno: ' + error.message 
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

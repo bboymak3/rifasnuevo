@@ -1,4 +1,4 @@
-export async function onRequest(context) {
+﻿export async function onRequest(context) {
   const { request, env } = context;
   
   try {
@@ -9,7 +9,10 @@ export async function onRequest(context) {
       });
     }
 
-    const { monto, metodoPago, referenciaPago, userId } = await request.json();
+    const data = await request.json();
+    const { monto, metodoPago, referenciaPago, userId } = data;
+    
+    console.log('Solicitar recarga:', { monto, metodoPago, referenciaPago, userId });
     
     if (!monto || !metodoPago || !referenciaPago || !userId) {
       return new Response(JSON.stringify({ 
@@ -24,9 +27,9 @@ export async function onRequest(context) {
     const db = env.DB;
     
     // Verificar que el usuario existe
-    const usuario = await db.prepare(`
-      SELECT id FROM usuarios WHERE id = ?
-    `).get(userId);
+    const usuario = await db.prepare(
+      'SELECT id FROM usuarios WHERE id = ?'
+    ).bind(userId).first();
 
     if (!usuario) {
       return new Response(JSON.stringify({ 
@@ -38,37 +41,44 @@ export async function onRequest(context) {
       });
     }
 
-    // Obtener tasa actual para calcular créditos
-    const tasa = await db.prepare(`
-      SELECT valor FROM config_tasas WHERE tipo = 'bs_creditos'
-    `).get();
+    // Obtener tasa actual
+    const tasa = await db.prepare(
+      'SELECT valor FROM config_tasas WHERE tipo = ?'
+    ).bind('bs_creditos').first();
 
-    const tasaBsCreditos = tasa ? tasa.valor : 250; // Valor por defecto
+    const tasaBsCreditos = tasa ? tasa.valor : 250;
     
-    // Calcular créditos a recibir
+    // Calcular créditos
     const creditosRecibir = Math.floor((monto * 100) / tasaBsCreditos);
+    
+    console.log('Calculando créditos:', { monto, tasaBsCreditos, creditosRecibir });
 
-    // Insertar solicitud de recarga
-    const result = await db.prepare(`
-      INSERT INTO recargas (usuario_id, monto, metodo_pago, referencia_pago, estado, creditos_solicitados)
-      VALUES (?, ?, ?, ?, 'pendiente', ?)
-    `).run(userId, monto, metodoPago, referenciaPago, creditosRecibir);
+    // Insertar solicitud
+    const result = await db.prepare(
+      'INSERT INTO recargas (usuario_id, monto, metodo_pago, referencia_pago, estado) VALUES (?, ?, ?, ?, ?)'
+    ).bind(userId, monto, metodoPago, referenciaPago, 'pendiente').run();
 
+    console.log('Recarga insertada, ID:', result.meta?.last_row_id);
+    
     return new Response(JSON.stringify({
       success: true,
       data: { 
-        id: result.lastInsertRowid,
-        creditosSolicitados: creditosRecibir
+        id: result.meta?.last_row_id,
+        creditosSolicitados: creditosRecibir,
+        tasaAplicada: tasaBsCreditos
       }
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
 
   } catch (error) {
-    console.error('Error solicitando recarga:', error);
+    console.error('Error en solicitar-recarga:', error);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: 'Error interno del servidor' 
+      error: 'Error interno: ' + error.message 
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
