@@ -1,95 +1,102 @@
-﻿<!-- login.html -->
-<!DOCTYPE html>
-<html lang="es">
+﻿<!DOCTYPE html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Login - Rifas Nuevo</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             max-width: 400px;
             margin: 50px auto;
             padding: 20px;
+            background: #f5f5f5;
         }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
+        .login-box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         input {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
+            margin: 10px 0;
             border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
+            border-radius: 5px;
         }
         button {
-            background: #4CAF50;
+            background: #007bff;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
+            padding: 12px;
             width: 100%;
+            border-radius: 5px;
+            cursor: pointer;
             font-size: 16px;
-        }
-        button:hover {
-            background: #45a049;
         }
         .error {
             color: red;
             background: #ffe6e6;
             padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+        .success {
+            color: green;
+            background: #e6ffe6;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+        .debug {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
             display: none;
         }
     </style>
 </head>
 <body>
-    <h1>Iniciar Sesión</h1>
-    
-    <div id="error-message" class="error"></div>
-    
-    <form id="login-form">
-        <div class="form-group">
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required>
+    <div class="login-box">
+        <h2>🎫 Login Rifas Nuevo</h2>
+        <p>Base de datos: <strong>rifasv2</strong></p>
+        
+        <div id="message" class="error"></div>
+        <div id="debugInfo" class="debug"></div>
+        
+        <input type="email" id="email" placeholder="Email" value="admin@rifas.com">
+        <input type="password" id="password" placeholder="Contraseña" value="admin123">
+        <button onclick="login()">Iniciar Sesión</button>
+        
+        <div style="margin-top: 20px; font-size: 14px; color: #666;">
+            <p><strong>Para probar:</strong></p>
+            <p>Email: admin@rifas.com</p>
+            <p>Contraseña: admin123</p>
         </div>
         
-        <div class="form-group">
-            <label for="password">Contraseña:</label>
-            <input type="password" id="password" name="password" required>
-        </div>
-        
-        <button type="submit">Iniciar Sesión</button>
-    </form>
-    
-    <p style="text-align: center; margin-top: 20px;">
-        ¿No tienes cuenta? <a href="registro.html">Regístrate</a>
-    </p>
+        <button onclick="testConnection()" style="background: #28a745; margin-top: 10px;">
+            🔍 Probar Conexión API
+        </button>
+    </div>
 
     <script>
-        document.getElementById('login-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            
+        async function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('error-message');
+            const message = document.getElementById('message');
+            const debug = document.getElementById('debugInfo');
             
-            // Limpiar mensaje de error
-            errorDiv.style.display = 'none';
-            errorDiv.textContent = '';
-            
-            if (!email || !password) {
-                showError('Por favor ingresa email y contraseña');
-                return;
-            }
+            message.textContent = 'Conectando...';
+            message.className = '';
+            message.style.display = 'block';
+            debug.style.display = 'none';
             
             try {
+                console.log('📤 Enviando login a API...');
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: {
@@ -101,41 +108,87 @@
                     })
                 });
                 
+                console.log('📥 Respuesta recibida:', response.status);
                 const data = await response.json();
+                console.log('📊 Datos:', data);
+                
+                // Mostrar información de debug
+                debug.innerHTML = `
+                    <strong>Debug Info:</strong><br>
+                    Status: ${response.status}<br>
+                    OK: ${response.ok}<br>
+                    Success: ${data.success}<br>
+                    Error: ${data.error || 'Ninguno'}<br>
+                    User ID: ${data.user?.id || 'N/A'}
+                `;
+                debug.style.display = 'block';
                 
                 if (response.ok && data.success) {
-                    // Guardar datos del usuario en localStorage
-                    localStorage.setItem('userId', data.data.id);
-                    localStorage.setItem('nombre', data.data.nombre);
-                    localStorage.setItem('email', data.data.email);
-                    localStorage.setItem('telefono', data.data.telefono);
-                    localStorage.setItem('creditos', data.data.creditos);
+                    // Guardar datos
+                    localStorage.setItem('userId', data.user.id);
+                    localStorage.setItem('nombre', data.user.nombre);
+                    localStorage.setItem('email', data.user.email);
+                    localStorage.setItem('telefono', data.user.telefono || '');
+                    localStorage.setItem('creditos', data.user.creditos);
+                    localStorage.setItem('isLoggedIn', 'true');
                     
-                    // Redirigir a la página principal
-                    window.location.href = 'index.html';
+                    message.textContent = '✅ ¡Login exitoso! Redirigiendo...';
+                    message.className = 'success';
+                    
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
                 } else {
-                    showError(data.error || 'Credenciales incorrectas');
+                    message.textContent = `❌ Error: ${data.error || 'Error desconocido'}`;
+                    message.className = 'error';
                 }
                 
             } catch (error) {
-                console.error('Error en login:', error);
-                showError('Error de conexión. Intenta de nuevo.');
+                console.error('💥 Error completo:', error);
+                message.textContent = `❌ Error de conexión: ${error.message}`;
+                message.className = 'error';
+                debug.innerHTML = `<strong>Error:</strong> ${error.message}`;
+                debug.style.display = 'block';
             }
-        });
+        }
         
-        function showError(message) {
-            const errorDiv = document.getElementById('error-message');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
+        async function testConnection() {
+            const message = document.getElementById('message');
+            const debug = document.getElementById('debugInfo');
+            
+            message.textContent = '🔍 Probando conexión con API...';
+            message.className = '';
+            message.style.display = 'block';
+            
+            try {
+                // Primero probar si el endpoint existe
+                const testResponse = await fetch('/api/login', {
+                    method: 'OPTIONS'
+                });
+                
+                debug.innerHTML = `
+                    <strong>Test de Conexión:</strong><br>
+                    OPTIONS Status: ${testResponse.status}<br>
+                    URL: /api/login<br>
+                    CORS: ${testResponse.headers.get('Access-Control-Allow-Origin') || 'No configurado'}
+                `;
+                debug.style.display = 'block';
+                
+                message.textContent = '✅ Endpoint disponible. Ahora prueba el login.';
+                message.className = 'success';
+                
+            } catch (error) {
+                message.textContent = `❌ No se puede conectar al API: ${error.message}`;
+                message.className = 'error';
+                debug.innerHTML = `<strong>Error conexión:</strong> ${error.message}`;
+                debug.style.display = 'block';
+            }
         }
         
         // Verificar si ya está logueado
-        window.addEventListener('DOMContentLoaded', function() {
-            if (localStorage.getItem('userId')) {
-                // Ya está logueado, redirigir
-                window.location.href = 'index.html';
-            }
-        });
+        if (localStorage.getItem('isLoggedIn') === 'true') {
+            window.location.href = 'index.html';
+        }
     </script>
 </body>
 </html>

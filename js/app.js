@@ -1,17 +1,39 @@
-﻿const CONFIG = {
-  precioTicket: 499.00,
-  rifaId: 140
+﻿// app.js - VERSIÓN ACTUALIZADA
+const CONFIG = {
+  precioTicket: 100, // En créditos, no en Bs
+  rifaId: 1
 };
 
 let estadoApp = {
   ticketsDisponibles: [],
   ticketsSeleccionados: [],
-  total: 0
+  usuario: null
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+  // Verificar si el usuario está logueado
+  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  const userData = localStorage.getItem('user');
+  
+  if (isLoggedIn && userData) {
+    estadoApp.usuario = JSON.parse(userData);
+    document.getElementById('userInfo').innerHTML = `
+      <span style="margin-right: 15px;">👤 ${estadoApp.usuario.nombre}</span>
+      <span class="badge bg-primary">💰 ${estadoApp.usuario.creditos} créditos</span>
+    `;
+  } else {
+    // Redirigir al login si no está logueado
+    window.location.href = 'login.html';
+    return;
+  }
+  
   cargarEstadisticas();
   cargarTicketsDisponibles();
+  
+  // Configurar eventos
+  document.getElementById('btnPagar').addEventListener('click', procederPago);
+  document.getElementById('btnLimpiar').addEventListener('click', limpiarSeleccion);
+  document.getElementById('btnLogout').addEventListener('click', logout);
 });
 
 async function cargarEstadisticas() {
@@ -20,9 +42,19 @@ async function cargarEstadisticas() {
     const data = await response.json();
     
     if (data.success) {
-      document.getElementById('ticketsVendidos').textContent = data.data.vendidos;
-      document.getElementById('ticketsDisponibles').textContent = data.data.disponibles;
-      document.getElementById('totalRecaudado').textContent = `Bs. ${(data.data.recaudado || 0).toFixed(2)}`;
+      const stats = data.estadisticas;
+      document.getElementById('ticketsVendidos').textContent = stats.tickets.vendidos;
+      document.getElementById('ticketsDisponibles').textContent = stats.tickets.disponibles;
+      document.getElementById('totalRecaudado').textContent = `${stats.recaudado} créditos`;
+      document.getElementById('porcentajeVendido').textContent = `${stats.tickets.porcentaje}%`;
+      
+      // Mostrar últimos tickets vendidos
+      const ultimosContainer = document.getElementById('ultimosVendidos');
+      if (stats.ultimosVendidos.length > 0) {
+        ultimosContainer.innerHTML = stats.ultimosVendidos.map(t => 
+          `<span class="badge bg-secondary me-1">#${t.numero}</span>`
+        ).join('');
+      }
     }
   } catch (error) {
     console.error('Error cargando estadísticas:', error);
@@ -35,7 +67,7 @@ async function cargarTicketsDisponibles() {
     const data = await response.json();
     
     if (data.success) {
-      estadoApp.ticketsDisponibles = data.data.disponibles;
+      estadoApp.ticketsDisponibles = data.disponibles;
       mostrarTicketsDisponibles();
     }
   } catch (error) {
@@ -45,6 +77,8 @@ async function cargarTicketsDisponibles() {
 
 function mostrarTicketsDisponibles() {
   const grid = document.getElementById('ticketGrid');
+  if (!grid) return;
+  
   grid.innerHTML = '';
 
   for (let i = 1; i <= 100; i++) {
@@ -85,17 +119,44 @@ function actualizarInterfaz() {
   mostrarTicketsDisponibles();
   
   const selectedDiv = document.getElementById('selectedTickets');
+  const totalCreditos = estadoApp.ticketsSeleccionados.length * CONFIG.precioTicket;
+  
   if (estadoApp.ticketsSeleccionados.length === 0) {
     selectedDiv.innerHTML = '<span class="text-muted">No hay tickets seleccionados</span>';
   } else {
-    selectedDiv.innerHTML = estadoApp.ticketsSeleccionados.map(num => 
-      `<span class="badge bg-success me-2">${num}</span>`
-    ).join('');
+    selectedDiv.innerHTML = `
+      <div>
+        <strong>Tickets seleccionados (${estadoApp.ticketsSeleccionados.length}):</strong>
+        <div class="mt-2">
+          ${estadoApp.ticketsSeleccionados.map(num => 
+            `<span class="badge bg-success me-1 mb-1">#${num}</span>`
+          ).join('')}
+        </div>
+        <div class="mt-2">
+          <strong>Total:</strong> ${totalCreditos} créditos
+        </div>
+      </div>
+    `;
   }
 
-  estadoApp.total = estadoApp.ticketsSeleccionados.length * CONFIG.precioTicket;
-  document.getElementById('totalPagar').textContent = estadoApp.total.toFixed(2);
-  document.getElementById('btnPagar').disabled = estadoApp.ticketsSeleccionados.length === 0;
+  document.getElementById('totalPagar').textContent = totalCreditos;
+  
+  const btnPagar = document.getElementById('btnPagar');
+  if (btnPagar) {
+    btnPagar.disabled = estadoApp.ticketsSeleccionados.length === 0;
+    
+    // Verificar si tiene créditos suficientes
+    const creditosUsuario = estadoApp.usuario ? estadoApp.usuario.creditos : 0;
+    if (totalCreditos > creditosUsuario) {
+      btnPagar.textContent = 'CRÉDITOS INSUFICIENTES';
+      btnPagar.classList.add('btn-danger');
+      btnPagar.classList.remove('btn-success');
+    } else {
+      btnPagar.textContent = `PAGAR ${totalCreditos} CRÉDITOS`;
+      btnPagar.classList.add('btn-success');
+      btnPagar.classList.remove('btn-danger');
+    }
+  }
 }
 
 function limpiarSeleccion() {
@@ -109,59 +170,78 @@ function procederPago() {
     return;
   }
 
-  // ✅ Cambia esto: NO uses precios en Bs, usa créditos
-  // Primero verificar si el usuario tiene créditos suficientes
-  verificarCreditosUsuario();
+  const totalCreditos = estadoApp.ticketsSeleccionados.length * CONFIG.precioTicket;
+  const creditosUsuario = estadoApp.usuario ? estadoApp.usuario.creditos : 0;
+  
+  if (totalCreditos > creditosUsuario) {
+    alert(`❌ Créditos insuficientes. Necesitas ${totalCreditos} créditos, pero solo tienes ${creditosUsuario}.`);
+    return;
+  }
+
+  // Guardar en sessionStorage
+  sessionStorage.setItem('ticketsSeleccionados', JSON.stringify(estadoApp.ticketsSeleccionados));
+  sessionStorage.setItem('totalCreditos', totalCreditos.toString());
+  
+  // Redirigir a compra.html con parámetros
+  window.location.href = `compra.html?tickets=${estadoApp.ticketsSeleccionados.join(',')}&total=${totalCreditos}`;
 }
 
-async function verificarCreditosUsuario() {
-  try {
-    // Obtener el userId del usuario logueado (esto deberías obtenerlo de localStorage o session)
-    const savedUser = localStorage.getItem('casinoUser');
-    if (!savedUser) {
-      alert('⚠️ Debes iniciar sesión para comprar tickets');
-      window.location.href = '/login.html';
-      return;
-    }
-
-    const usuario = JSON.parse(savedUser);
-    const userId = usuario.id;
-    
-    // Verificar créditos del usuario
-    const response = await fetch('/api/verificar-creditos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: userId })
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      const creditosUsuario = data.data.usuario.creditos;
-      const precioPorTicket = data.data.precios.precioPorTicket;
-      const totalCreditos = estadoApp.ticketsSeleccionados.length * precioPorTicket;
-      
-      if (creditosUsuario < totalCreditos) {
-        alert(`❌ Créditos insuficientes. Necesitas ${totalCreditos} créditos, pero solo tienes ${creditosUsuario}.`);
-        return;
-      }
-      
-      // Guardar en sessionStorage
-      sessionStorage.setItem('ticketsSeleccionados', JSON.stringify(estadoApp.ticketsSeleccionados));
-      sessionStorage.setItem('totalPago', estadoApp.total.toString());
-      
-      // Redirigir a compra.html con parámetros
-      window.location.href = `/compra.html?tickets=${estadoApp.ticketsSeleccionados.join(',')}&total=${totalCreditos}`;
-    } else {
-      alert('Error verificando créditos: ' + data.error);
-    }
-  } catch (error) {
-    console.error('Error verificando créditos:', error);
-    alert('Error al verificar créditos. Por favor intenta nuevamente.');
+function logout() {
+  if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = 'login.html';
   }
 }
 
+// Recargar datos cada 30 segundos
 setInterval(() => {
   cargarEstadisticas();
   cargarTicketsDisponibles();
 }, 30000);
+
+// CSS necesario (añade esto en tu HTML o crea un archivo CSS)
+const style = document.createElement('style');
+style.textContent = `
+  .ticket-number {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    margin: 2px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  
+  .ticket-number.disponible {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+  
+  .ticket-number.disponible:hover {
+    background-color: #c3e6cb;
+  }
+  
+  .ticket-number.vendido {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  
+  .ticket-number.selected {
+    background-color: #007bff;
+    color: white;
+    border-color: #0056b3;
+  }
+  
+  .badge {
+    font-size: 14px;
+    padding: 5px 10px;
+  }
+`;
+document.head.appendChild(style);
