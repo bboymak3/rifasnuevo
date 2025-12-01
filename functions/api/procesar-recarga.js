@@ -1,9 +1,9 @@
 ﻿export async function onRequest(context) {
   const { request, env } = context;
   
+  console.log('=== PROCESAR RECARGA ENDPOINT ===');
+  
   try {
-    console.log('=== PROCESAR RECARGA ===');
-    
     if (request.method !== 'POST') {
       return new Response(JSON.stringify({ success: false, error: 'Método no permitido' }), {
         status: 405,
@@ -28,14 +28,12 @@
 
     const db = env.DB;
     
-    // Obtener información de la recarga
-    console.log('Buscando recarga ID:', recargaId);
+    // Obtener recarga
     const recarga = await db.prepare(
       'SELECT * FROM recargas WHERE id = ?'
     ).bind(recargaId).first();
 
     if (!recarga) {
-      console.log('Recarga no encontrada');
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'Recarga no encontrada' 
@@ -44,8 +42,6 @@
         headers: { 'Content-Type': 'application/json' }
       });
     }
-
-    console.log('Recarga encontrada:', recarga);
 
     if (recarga.estado !== 'pendiente') {
       return new Response(JSON.stringify({ 
@@ -58,7 +54,7 @@
     }
 
     if (accion === 'aprobada') {
-      // Calcular créditos a aprobar (basado en tasa actual)
+      // Obtener tasa
       const tasa = await db.prepare(
         'SELECT valor FROM config_tasas WHERE tipo = ?'
       ).bind('bs_creditos').first();
@@ -66,31 +62,20 @@
       const tasaBsCreditos = tasa ? tasa.valor : 250;
       const creditosAprobados = Math.floor((recarga.monto * 100) / tasaBsCreditos);
       
-      console.log('Aprobando créditos:', { monto: recarga.monto, tasa: tasaBsCreditos, creditos: creditosAprobados });
-
       // Sumar créditos al usuario
       await db.prepare(
         'UPDATE usuarios SET creditos = creditos + ? WHERE id = ?'
       ).bind(creditosAprobados, recarga.usuario_id).run();
-      
-      console.log('Créditos sumados al usuario:', recarga.usuario_id);
     }
 
-    // Actualizar estado de la recarga
+    // Actualizar estado
     await db.prepare(
       'UPDATE recargas SET estado = ?, fecha_procesado = CURRENT_TIMESTAMP, administrador_id = ? WHERE id = ?'
     ).bind(accion, adminId || null, recargaId).run();
 
-    console.log('Recarga actualizada a estado:', accion);
-
     return new Response(JSON.stringify({
       success: true,
-      message: `Recarga ${accion === 'aprobada' ? 'aprobada' : 'rechazada'} correctamente`,
-      data: {
-        recargaId: recargaId,
-        nuevoEstado: accion,
-        creditosAprobados: accion === 'aprobada' ? Math.floor((recarga.monto * 100) / (tasa?.valor || 250)) : 0
-      }
+      message: `Recarga ${accion === 'aprobada' ? 'aprobada' : 'rechazada'} correctamente`
     }), {
       headers: { 
         'Content-Type': 'application/json',

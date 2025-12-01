@@ -1,9 +1,9 @@
 ﻿export async function onRequest(context) {
   const { request, env } = context;
   
+  console.log('=== ACTUALIZAR TASA ENDPOINT ===');
+  
   try {
-    console.log('=== ACTUALIZAR TASA ===');
-    
     if (request.method !== 'POST') {
       return new Response(JSON.stringify({ success: false, error: 'Método no permitido' }), {
         status: 405,
@@ -26,7 +26,7 @@
       });
     }
 
-    const db = context.env.DB;
+    const db = env.DB;
     
     // Verificar que la tasa existe
     const tasaExistente = await db.prepare(

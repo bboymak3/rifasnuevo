@@ -1,8 +1,10 @@
 ﻿document.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 Panel Admin cargado');
   cargarPanelAdmin();
 });
 
 async function cargarPanelAdmin() {
+  console.log('🔄 Cargando panel admin completo...');
   await cargarEstadisticas();
   await cargarTicketsVendidos();
   await cargarOrdenes();
@@ -187,7 +189,7 @@ async function cargarSolicitudesRecarga() {
     const data = await response.json();
     const tabla = document.getElementById('tablaSolicitudesRecarga');
     
-    console.log('📦 Datos recibidos:', data);
+    console.log('📦 Solicitudes recibidas:', data);
     
     if (data.success) {
       if (!data.data.solicitudes || data.data.solicitudes.length === 0) {
@@ -238,9 +240,9 @@ async function cargarSolicitudesRecarga() {
   }
 }
 
-// Función para procesar recargas (aprobar/rechazar)
+// Función para procesar recargas (CORREGIDA - usa /api/procesar-recarga)
 async function procesarRecarga(recargaId, accion) {
-  console.log('🔄 Procesando recarga:', recargaId, accion);
+  console.log(`🔧 Procesando recarga ${recargaId} - Acción: ${accion}`);
   
   if (!confirm(`¿Estás seguro de ${accion === 'aprobada' ? 'aprobar' : 'rechazar'} esta recarga?`)) {
     return;
@@ -248,6 +250,8 @@ async function procesarRecarga(recargaId, accion) {
 
   try {
     const API_BASE_URL = window.location.origin;
+    
+    // IMPORTANTE: Usar el endpoint correcto
     const response = await fetch(`${API_BASE_URL}/api/procesar-recarga`, {
       method: 'POST',
       headers: { 
@@ -256,116 +260,137 @@ async function procesarRecarga(recargaId, accion) {
       body: JSON.stringify({ 
         recargaId: recargaId, 
         accion: accion,
-        adminId: 1 // En una app real, usarías el ID del admin logueado
+        adminId: 1
       })
     });
 
-    console.log('📊 Respuesta status:', response.status);
+    console.log('📊 Status:', response.status, response.statusText);
     
+    // Manejar respuesta
     const text = await response.text();
-    console.log('📦 Respuesta raw:', text);
+    console.log('📦 Respuesta:', text || '(vacía)');
+    
+    if (!text) {
+      throw new Error('Respuesta vacía del servidor');
+    }
     
     let data;
     try {
       data = JSON.parse(text);
-    } catch (parseError) {
-      console.error('❌ Error parseando JSON:', parseError);
-      throw new Error('Respuesta no es JSON: ' + text.substring(0, 100));
+    } catch(e) {
+      console.error('❌ Error parseando JSON:', e);
+      throw new Error(`Respuesta inválida: ${text.substring(0, 100)}`);
     }
-
+    
     if (data.success) {
       alert(`✅ Recarga ${accion === 'aprobada' ? 'aprobada' : 'rechazada'} correctamente`);
-      cargarSolicitudesRecarga(); // Recargar la tabla
+      cargarSolicitudesRecarga(); // Recargar tabla
     } else {
-      alert('❌ Error: ' + data.error);
+      alert(`❌ Error: ${data.error || 'Error desconocido'}`);
     }
+    
   } catch (error) {
     console.error('❌ Error procesando recarga:', error);
-    alert('❌ Error al procesar la recarga: ' + error.message);
+    alert(`❌ Error: ${error.message}`);
   }
 }
 
-// Función para cargar configuración de tasas (CORREGIDA)
+// Función para cargar configuración de tasas (CORREGIDA DEFINITIVAMENTE)
 async function cargarConfigTasas() {
+  console.log('🔧 Cargando configuración de tasas...');
+  
   try {
-    console.log('🔧 Cargando configuración de tasas...');
     const API_BASE_URL = window.location.origin;
     const response = await fetch(`${API_BASE_URL}/api/config-tasas`);
     
-    console.log('📊 Status de respuesta:', response.status, response.ok);
+    console.log('📊 Status:', response.status);
     
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      throw new Error(`HTTP Error: ${response.status}`);
     }
     
-    const data = await response.json();
-    console.log('📦 Datos recibidos:', data);
+    const text = await response.text();
+    console.log('📦 Texto recibido:', text.substring(0, 300) + '...');
     
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch(e) {
+      console.error('❌ Error parseando JSON:', e);
+      throw new Error('Respuesta no es JSON válido');
+    }
+    
+    console.log('📊 Estructura de data:', data);
+    
+    // Verificar estructura
+    if (!data || typeof data !== 'object') {
+      throw new Error('Respuesta inválida del servidor');
+    }
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Error del servidor');
+    }
+    
+    if (!data.data || !data.data.tasas || !Array.isArray(data.data.tasas)) {
+      console.warn('⚠️ Estructura inesperada, data.data.tasas:', data.data?.tasas);
+      throw new Error('Estructura de datos incorrecta');
+    }
+    
+    const tasasArray = data.data.tasas;
+    console.log(`✅ Se encontraron ${tasasArray.length} tasas`);
+    
+    // Mostrar en tabla
     const tabla = document.getElementById('tablaConfigTasas');
-    
     if (!tabla) {
-      console.error('❌ No se encontró el elemento tablaConfigTasas');
+      console.error('❌ No se encontró tablaConfigTasas en el DOM');
       return;
     }
     
-    // Verificar estructura de datos
-    if (data.success && data.data && data.data.tasas && Array.isArray(data.data.tasas)) {
-      console.log(`✅ Se encontraron ${data.data.tasas.length} tasas`);
-      
-      if (data.data.tasas.length === 0) {
-        tabla.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay tasas configuradas</td></tr>';
-        return;
-      }
-      
-      // Crear HTML de las tasas
-      const filasHTML = data.data.tasas.map(tasa => {
-        // Sanitizar valores para evitar errores en el onclick
-        const tipo = tasa.tipo || '';
-        const valor = tasa.valor || 0;
-        const descripcion = (tasa.descripcion || 'Sin descripción').replace(/'/g, "\\'").replace(/`/g, "\\`");
-        const fecha = tasa.fecha_actualizacion ? new Date(tasa.fecha_actualizacion).toLocaleString() : 'N/A';
-        
-        return `
-        <tr>
-          <td>
-            <strong>${tipo.replace(/_/g, ' ').toUpperCase()}</strong>
-          </td>
-          <td>${descripcion}</td>
-          <td>
-            <span class="badge bg-primary">${valor}</span>
-          </td>
-          <td>${fecha}</td>
-          <td>
-            <button class="btn btn-sm btn-warning" 
-              onclick="editarTasa('${tipo}', ${valor}, \`${descripcion}\`)">
-              ✏️ Editar
-            </button>
-          </td>
-        </tr>`;
-      }).join('');
-      
-      tabla.innerHTML = filasHTML;
-      console.log('✅ Tabla de tasas actualizada correctamente');
-      
-    } else {
-      console.warn('⚠️ Estructura de datos inesperada:', data);
-      tabla.innerHTML = `
-        <tr>
-          <td colspan="5" class="text-center text-warning">
-            Estructura de datos inesperada
-            <br><small>${JSON.stringify(data).substring(0, 100)}...</small>
-          </td>
-        </tr>`;
+    if (tasasArray.length === 0) {
+      tabla.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay tasas configuradas</td></tr>';
+      return;
     }
     
+    // Generar HTML
+    const filasHTML = tasasArray.map(tasa => {
+      const tipo = tasa.tipo || 'desconocido';
+      const valor = tasa.valor || 0;
+      const descripcion = tasa.descripcion || 'Sin descripción';
+      const fecha = tasa.fecha_actualizacion 
+        ? new Date(tasa.fecha_actualizacion).toLocaleString() 
+        : 'N/A';
+      
+      // Escapar comillas simples para el onclick
+      const descripcionSegura = descripcion.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      
+      return `
+      <tr>
+        <td><strong>${tipo.replace(/_/g, ' ').toUpperCase()}</strong></td>
+        <td>${descripcion}</td>
+        <td><span class="badge bg-primary">${valor}</span></td>
+        <td>${fecha}</td>
+        <td>
+          <button class="btn btn-sm btn-warning" 
+            onclick="editarTasa('${tipo}', ${valor}, '${descripcionSegura}')">
+            ✏️ Editar
+          </button>
+        </td>
+      </tr>`;
+    }).join('');
+    
+    tabla.innerHTML = filasHTML;
+    console.log('✅ Tabla de tasas actualizada correctamente');
+    
   } catch (error) {
-    console.error('❌ Error cargando configuración de tasas:', error);
+    console.error('❌ Error en cargarConfigTasas:', error);
+    console.error('❌ Stack trace:', error.stack);
+    
     const tabla = document.getElementById('tablaConfigTasas');
     if (tabla) {
       tabla.innerHTML = `
         <tr>
           <td colspan="5" class="text-center text-danger">
-            Error cargando configuración: ${error.message}
+            <strong>Error cargando tasas:</strong> ${error.message}
           </td>
         </tr>`;
     }
@@ -374,6 +399,8 @@ async function cargarConfigTasas() {
 
 // Función para editar tasa (CORREGIDA)
 function editarTasa(tipo, valorActual, descripcion) {
+  console.log(`🔧 Iniciando editarTasa:`, { tipo, valorActual });
+  
   const tipoMostrar = tipo.replace(/_/g, ' ').toUpperCase();
   const nuevoValor = prompt(
     `Editar ${tipoMostrar}\n\n` +
@@ -383,7 +410,10 @@ function editarTasa(tipo, valorActual, descripcion) {
     valorActual
   );
   
-  if (nuevoValor === null) return; // Usuario canceló
+  if (nuevoValor === null) {
+    console.log('⚠️ Usuario canceló la edición');
+    return;
+  }
   
   const valorNumerico = parseFloat(nuevoValor);
   if (isNaN(valorNumerico)) {
@@ -396,10 +426,11 @@ function editarTasa(tipo, valorActual, descripcion) {
     return;
   }
   
+  console.log(`✅ Nuevo valor confirmado: ${valorNumerico}`);
   actualizarTasa(tipo, valorNumerico);
 }
 
-// Función para actualizar tasa en el servidor (CORREGIDA)
+// Función para actualizar tasa en el servidor
 async function actualizarTasa(tipo, nuevoValor) {
   try {
     console.log(`🔄 Actualizando tasa ${tipo} a ${nuevoValor}`);
