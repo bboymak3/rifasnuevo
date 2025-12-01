@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Simple</title>
+</head>
+<body>
+    <h1>🔧 Debug Rápido</h1>
+    
+    <button onclick="probarLogin()">1. Probar Login API</button>
+    <button onclick="verStorage()">2. Ver Storage</button>
+    <button onclick="limpiarTodo()">3. Limpiar Todo</button>
+    
+    <div id="result" style="margin-top:20px; padding:15px; background:#f0f0f0;"></div>
+    
+    <script>
+        async function probarLogin() {
+            const result = document.getElementById('result');
+            result.innerHTML = '<p>Enviando login...</p>';
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        email: 'admin@rifas.com',
+                        password: 'admin123'
+                    })
+                });
+                
+                const text = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    result.innerHTML = `<p style="color:red;">❌ Error parseando JSON: ${e.message}</p>`;
+                    result.innerHTML += `<pre>Respuesta cruda: ${text}</pre>`;
+                    return;
+                }
+                
+                result.innerHTML = `
+                    <h3>Respuesta del Login:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    <p>Status: ${response.status}</p>
+                    <p>OK: ${response.ok}</p>
+                    <p>Headers: ${JSON.stringify([...response.headers])}</p>
+                `;
+                
+            } catch (error) {
+                result.innerHTML = `<p style="color:red;">❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        function verStorage() {
+            const result = document.getElementById('result');
+            const items = {};
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                items[key] = localStorage.getItem(key);
+            }
+            
+            result.innerHTML = `
+                <h3>LocalStorage Actual:</h3>
+                <pre>${JSON.stringify(items, null, 2)}</pre>
+            `;
+        }
+        
+        function limpiarTodo() {
+            localStorage.clear();
+            sessionStorage.clear();
+            document.getElementById('result').innerHTML = '<p>✅ Todo limpiado</p>';
+        }
+        
+        // Auto-ejecutar al cargar
+        document.addEventListener('DOMContentLoaded', verStorage);
+    </script>
+</body>
+</html>
