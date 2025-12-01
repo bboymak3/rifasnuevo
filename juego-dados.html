@@ -1,11 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Juego de Dados - Casino Rifas</title>
+  <title>Juego de Dados - Sistema de Rifas</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     body {
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -14,34 +13,52 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     
+    .navbar {
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+    }
+    
     .dado {
-      width: 80px;
-      height: 80px;
+      width: 100px;
+      height: 100px;
       background: white;
       border-radius: 15px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2rem;
+      font-size: 3rem;
       font-weight: bold;
       color: #1a1a2e;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
       margin: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .dado::before {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: #1a1a2e;
+      border-radius: 50%;
+      opacity: 0.2;
     }
     
     .dado-container {
       display: flex;
       justify-content: center;
-      gap: 20px;
-      margin: 20px 0;
+      gap: 30px;
+      margin: 30px 0;
     }
     
     .player-area {
       background: rgba(255,255,255,0.1);
-      border-radius: 15px;
-      padding: 20px;
-      margin: 10px 0;
+      border-radius: 20px;
+      padding: 30px;
+      margin: 20px 0;
       border: 2px solid rgba(255,255,255,0.2);
+      backdrop-filter: blur(10px);
     }
     
     .rolling {
@@ -57,12 +74,19 @@
     }
     
     .resultado {
-      font-size: 1.5rem;
+      font-size: 1.8rem;
       font-weight: bold;
-      padding: 15px;
-      border-radius: 10px;
-      margin: 20px 0;
+      padding: 25px;
+      border-radius: 15px;
+      margin: 30px 0;
       text-align: center;
+      backdrop-filter: blur(10px);
+      animation: fadeIn 0.5s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     
     .ganador {
@@ -85,110 +109,204 @@
     
     .apuesta-control {
       background: rgba(255,255,255,0.1);
-      border-radius: 10px;
-      padding: 20px;
-      margin: 20px 0;
+      border-radius: 15px;
+      padding: 30px;
+      margin: 30px 0;
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255,255,255,0.2);
     }
     
     .btn-dados {
       background: linear-gradient(45deg, #ff6b6b, #ee5a24);
       color: white;
       border: none;
-      padding: 15px 30px;
-      font-size: 1.2rem;
+      padding: 18px 40px;
+      font-size: 1.3rem;
       font-weight: bold;
-      border-radius: 10px;
+      border-radius: 12px;
       transition: all 0.3s;
+      width: 100%;
     }
     
-    .btn-dados:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 20px rgba(238, 90, 36, 0.4);
+    .btn-dados:hover:not(:disabled) {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(238, 90, 36, 0.4);
     }
     
     .btn-dados:disabled {
       background: #6c757d;
       transform: none;
       box-shadow: none;
+      opacity: 0.7;
+    }
+    
+    .creditos-badge {
+      background: linear-gradient(45deg, #ffd700, #ff9800);
+      color: #1a1a2e;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-weight: bold;
+      font-size: 1.2rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .historial-item {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 15px;
+      margin: 10px 0;
+      border-left: 4px solid;
+      animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    
+    .historial-ganador {
+      border-left-color: #28a745;
+    }
+    
+    .historial-perdedor {
+      border-left-color: #dc3545;
+    }
+    
+    .historial-empate {
+      border-left-color: #ffc107;
+    }
+    
+    .puntos-total {
+      font-size: 3rem;
+      font-weight: bold;
+      text-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      margin: 10px 0;
+    }
+    
+    .usuario-total {
+      color: #4fc3f7;
+    }
+    
+    .computadora-total {
+      color: #ff5252;
+    }
+    
+    @media (max-width: 768px) {
+      .dado {
+        width: 70px;
+        height: 70px;
+        font-size: 2rem;
+      }
+      
+      .dado-container {
+        gap: 15px;
+      }
+      
+      .puntos-total {
+        font-size: 2rem;
+      }
     }
   </style>
 </head>
 <body>
   <!-- Navbar -->
-  <nav class="navbar navbar-dark bg-dark">
+  <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
-      <span class="navbar-brand">🎲 Juego de Dados</span>
-      <div>
-        <a href="/" class="btn btn-outline-light btn-sm me-2">🏠 Inicio</a>
-        <a href="/recarga.html" class="btn btn-outline-warning btn-sm">💰 Recargar</a>
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+        🎲 <span>Juego de Dados</span>
+      </a>
+      <div class="d-flex align-items-center gap-3">
+        <div class="creditos-badge" id="creditosBadge">
+          💰 <span id="userCredits">0</span> créditos
+        </div>
+        <button class="btn btn-outline-light btn-sm" onclick="window.location.href='index.html'">
+          🏠 Inicio
+        </button>
+        <button class="btn btn-warning btn-sm" onclick="window.location.href='recargar-creditos.html'">
+          💳 Recargar
+        </button>
       </div>
     </div>
   </nav>
 
-  <div class="container py-5">
+  <div class="container py-4">
     <div class="row justify-content-center">
-      <div class="col-md-8">
-        <!-- Panel de Usuario -->
-        <div class="card bg-dark mb-4">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h5 id="userName">Jugador</h5>
-                <small class="text-muted" id="userEmail">usuario@ejemplo.com</small>
-              </div>
-              <div class="text-end">
-                <h4 class="text-warning" id="userCredits">0</h4>
-                <small class="text-muted">Créditos disponibles</small>
-              </div>
-            </div>
-          </div>
+      <div class="col-lg-10">
+        <!-- Información del usuario -->
+        <div class="text-center mb-4">
+          <h4 class="mb-2">👤 <span id="userName">Jugador</span></h4>
+          <p class="text-muted" id="userEmail">usuario@ejemplo.com</p>
         </div>
 
         <!-- Controles de Apuesta -->
         <div class="apuesta-control">
           <h4 class="text-center mb-4">🎯 Control de Apuesta</h4>
           <div class="row align-items-center">
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Cantidad a Apostar</label>
-              <input type="number" class="form-control form-control-lg" id="apuestaInput" 
-                     min="5" max="100" value="10">
-              <div class="form-text text-light">
-                Mínimo: <span id="apuestaMin">5</span> - Máximo: <span id="apuestaMax">100</span> créditos
+            <div class="col-md-7">
+              <label class="form-label fw-bold mb-3">Cantidad a Apostar</label>
+              <div class="d-flex align-items-center gap-3">
+                <input type="range" class="form-range" id="apuestaRange" 
+                       min="10" max="500" value="50" step="10">
+                <div class="input-group" style="width: 150px;">
+                  <span class="input-group-text">💰</span>
+                  <input type="number" class="form-control text-center" id="apuestaInput" 
+                         min="10" max="500" value="50">
+                </div>
+              </div>
+              <div class="d-flex justify-content-between mt-2">
+                <small class="text-muted">Mín: <span id="apuestaMin">10</span> créditos</small>
+                <small class="text-muted">Máx: <span id="apuestaMax">500</span> créditos</small>
+              </div>
+              <div class="mt-3">
+                <small class="text-muted">Créditos después de apuesta: </small>
+                <strong class="text-warning" id="creditosDespues">0</strong>
               </div>
             </div>
-            <div class="col-md-6 text-center">
-              <button class="btn btn-dados btn-lg w-100" id="btnJugar" onclick="jugarDados()">
-                🎲 JUGAR
+            <div class="col-md-5">
+              <button class="btn btn-dados btn-lg" id="btnJugar" onclick="jugarDados()">
+                🎲 JUGAR DADOS
               </button>
+              <div class="text-center mt-3">
+                <button class="btn btn-outline-light btn-sm" onclick="apuestaRapida(100)">
+                  Apostar 100
+                </button>
+                <button class="btn btn-outline-light btn-sm ms-2" onclick="apuestaRapida(500)">
+                  Apostar 500
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Área de Juego -->
         <div class="player-area">
-          <h4 class="text-center mb-4">🎮 En Juego</h4>
-          
-          <!-- Jugador -->
-          <div class="mb-4">
-            <h5 class="text-info">👤 TUS DADOS</h5>
-            <div class="dado-container">
-              <div class="dado" id="usuarioDado1">?</div>
-              <div class="dado" id="usuarioDado2">?</div>
+          <div class="row">
+            <!-- Jugador -->
+            <div class="col-md-6 mb-4 mb-md-0">
+              <h5 class="text-info mb-3">👤 TUS DADOS</h5>
+              <div class="dado-container">
+                <div class="dado" id="usuarioDado1">?</div>
+                <div class="dado" id="usuarioDado2">?</div>
+              </div>
+              <div class="text-center mt-3">
+                <div class="puntos-total usuario-total" id="usuarioTotal">0</div>
+                <small class="text-muted">Total de puntos</small>
+              </div>
             </div>
-            <div class="text-center mt-2">
-              <strong>Total: <span id="usuarioTotal">0</span></strong>
-            </div>
-          </div>
 
-          <!-- Computadora -->
-          <div>
-            <h5 class="text-danger">🤖 COMPUTADORA</h5>
-            <div class="dado-container">
-              <div class="dado" id="computadoraDado1">?</div>
-              <div class="dado" id="computadoraDado2">?</div>
-            </div>
-            <div class="text-center mt-2">
-              <strong>Total: <span id="computadoraTotal">0</span></strong>
+            <!-- Computadora -->
+            <div class="col-md-6">
+              <h5 class="text-danger mb-3">🤖 COMPUTADORA</h5>
+              <div class="dado-container">
+                <div class="dado" id="computadoraDado1">?</div>
+                <div class="dado" id="computadoraDado2">?</div>
+              </div>
+              <div class="text-center mt-3">
+                <div class="puntos-total computadora-total" id="computadoraTotal">0</div>
+                <small class="text-muted">Total de puntos</small>
+              </div>
             </div>
           </div>
         </div>
@@ -196,6 +314,15 @@
         <!-- Resultado -->
         <div class="resultado" id="resultadoDiv" style="display: none;">
           <div id="resultadoTexto"></div>
+          <div id="resultadoDetalle" class="mt-2"></div>
+        </div>
+
+        <!-- Historial de Partidas -->
+        <div class="mt-5" id="historialContainer" style="display: none;">
+          <h4 class="text-center mb-4">📋 Historial de Partidas</h4>
+          <div id="historialLista">
+            <!-- Historial se llenará con JavaScript -->
+          </div>
         </div>
 
         <!-- Botones de Acción -->
@@ -212,55 +339,88 @@
   </div>
 
   <script>
-    let currentUser = null;
-    let configTasas = {};
+    let usuario = null;
+    let historialJuegos = [];
     let juegoActivo = false;
 
     // Inicializar juego
     document.addEventListener('DOMContentLoaded', function() {
-      checkUserSession();
-      cargarConfigTasas();
+      verificarSesion();
+      configurarControlesApuesta();
     });
 
-    // Verificar sesión de usuario
-    function checkUserSession() {
-      const savedUser = localStorage.getItem('casinoUser');
-      if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        showUserInfo();
-      } else {
-        alert('Debes iniciar sesión para jugar');
-        window.location.href = '/';
+    // Verificar sesión
+    function verificarSesion() {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const userDataStr = localStorage.getItem('user');
+      
+      if (isLoggedIn !== 'true' || !userDataStr) {
+        alert('Debes iniciar sesión para jugar a los dados');
+        window.location.href = 'login.html';
+        return;
+      }
+      
+      try {
+        usuario = JSON.parse(userDataStr);
+        mostrarInfoUsuario();
+        actualizarCreditosDespues();
+      } catch (error) {
+        console.error('Error cargando usuario:', error);
+        window.location.href = 'login.html';
       }
     }
 
     // Mostrar información del usuario
-    function showUserInfo() {
-      document.getElementById('userName').textContent = currentUser.nombre;
-      document.getElementById('userEmail').textContent = currentUser.email;
-      document.getElementById('userCredits').textContent = currentUser.creditos.toLocaleString();
+    function mostrarInfoUsuario() {
+      document.getElementById('userName').textContent = usuario.nombre;
+      document.getElementById('userEmail').textContent = usuario.email;
+      document.getElementById('userCredits').textContent = usuario.creditos || 0;
+      document.getElementById('creditosBadge').innerHTML = 
+        `💰 <span id="userCredits">${usuario.creditos || 0}</span> créditos`;
     }
 
-    // Cargar configuración de tasas
-    async function cargarConfigTasas() {
-      try {
-        const response = await fetch('/api/config-tasas');
-        const data = await response.json();
-        
-        if (data.success) {
-          data.data.tasas.forEach(tasa => {
-            configTasas[tasa.tipo] = tasa.valor;
-          });
-          
-          // Actualizar controles de apuesta
-          document.getElementById('apuestaInput').min = configTasas.dados_apuesta_min || 5;
-          document.getElementById('apuestaInput').max = configTasas.dados_apuesta_max || 100;
-          document.getElementById('apuestaMin').textContent = configTasas.dados_apuesta_min || 5;
-          document.getElementById('apuestaMax').textContent = configTasas.dados_apuesta_max || 100;
-        }
-      } catch (error) {
-        console.error('Error cargando tasas:', error);
+    // Configurar controles de apuesta
+    function configurarControlesApuesta() {
+      const apuestaInput = document.getElementById('apuestaInput');
+      const apuestaRange = document.getElementById('apuestaRange');
+      
+      // Sincronizar input y range
+      apuestaInput.addEventListener('input', function() {
+        let valor = parseInt(this.value);
+        if (valor < 10) valor = 10;
+        if (valor > 500) valor = 500;
+        this.value = valor;
+        apuestaRange.value = valor;
+        actualizarCreditosDespues();
+      });
+      
+      apuestaRange.addEventListener('input', function() {
+        apuestaInput.value = this.value;
+        actualizarCreditosDespues();
+      });
+    }
+
+    // Actualizar créditos después de apuesta
+    function actualizarCreditosDespues() {
+      const apuesta = parseInt(document.getElementById('apuestaInput').value);
+      const creditosDespues = (usuario.creditos || 0) - apuesta;
+      document.getElementById('creditosDespues').textContent = creditosDespues;
+      
+      // Cambiar color si no hay suficientes créditos
+      if (creditosDespues < 0) {
+        document.getElementById('creditosDespues').style.color = '#dc3545';
+        document.getElementById('btnJugar').disabled = true;
+      } else {
+        document.getElementById('creditosDespues').style.color = '#ffc107';
+        document.getElementById('btnJugar').disabled = false;
       }
+    }
+
+    // Apuesta rápida
+    function apuestaRapida(cantidad) {
+      document.getElementById('apuestaInput').value = cantidad;
+      document.getElementById('apuestaRange').value = cantidad;
+      actualizarCreditosDespues();
     }
 
     // Función principal para jugar
@@ -268,56 +428,40 @@
       if (juegoActivo) return;
       
       const apuesta = parseInt(document.getElementById('apuestaInput').value);
-      const apuestaMin = configTasas.dados_apuesta_min || 5;
-      const apuestaMax = configTasas.dados_apuesta_max || 100;
-
+      
       // Validaciones
-      if (apuesta < apuestaMin || apuesta > apuestaMax) {
-        alert(`La apuesta debe estar entre ${apuestaMin} y ${apuestaMax} créditos`);
+      if (apuesta < 10 || apuesta > 500) {
+        mostrarError('La apuesta debe estar entre 10 y 500 créditos');
         return;
       }
 
-      if (currentUser.creditos < apuesta) {
-        alert('No tienes suficientes créditos para esta apuesta');
+      if (!usuario || usuario.creditos < apuesta) {
+        mostrarError('No tienes suficientes créditos para esta apuesta');
         return;
       }
 
       juegoActivo = true;
       document.getElementById('btnJugar').disabled = true;
+      document.getElementById('btnJugar').innerHTML = '🎲 LANZANDO DADOS...';
 
       // Animación de dados girando
       iniciarAnimacionDados();
 
       try {
-        const response = await fetch('/api/jugar-dados', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            apuesta: apuesta,
-            userId: currentUser.id
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          // Mostrar resultado después de la animación
-          setTimeout(() => {
-            mostrarResultado(data.data);
-            juegoActivo = false;
-          }, 2000);
-        } else {
-          alert('Error: ' + data.error);
+        // Simular juego de dados (en un sistema real, esto sería en el backend)
+        setTimeout(() => {
+          procesarResultado(apuesta);
           juegoActivo = false;
           document.getElementById('btnJugar').disabled = false;
-        }
+          document.getElementById('btnJugar').innerHTML = '🎲 JUGAR DADOS';
+        }, 2000);
+
       } catch (error) {
         console.error('Error jugando:', error);
-        alert('Error de conexión');
+        mostrarError('Error de conexión');
         juegoActivo = false;
         document.getElementById('btnJugar').disabled = false;
+        document.getElementById('btnJugar').innerHTML = '🎲 JUGAR DADOS';
       }
     }
 
@@ -340,66 +484,190 @@
       document.getElementById('accionesDiv').style.display = 'none';
     }
 
-    // Mostrar resultado del juego
-    function mostrarResultado(resultado) {
+    // Procesar resultado del juego
+    function procesarResultado(apuesta) {
+      // Generar números aleatorios para los dados
+      const usuarioDado1 = Math.floor(Math.random() * 6) + 1;
+      const usuarioDado2 = Math.floor(Math.random() * 6) + 1;
+      const computadoraDado1 = Math.floor(Math.random() * 6) + 1;
+      const computadoraDado2 = Math.floor(Math.random() * 6) + 1;
+      
+      const usuarioTotal = usuarioDado1 + usuarioDado2;
+      const computadoraTotal = computadoraDado1 + computadoraDado2;
+
       // Detener animación
       const dados = [
         'usuarioDado1', 'usuarioDado2', 
         'computadoraDado1', 'computadoraDado2'
       ];
-
       dados.forEach(dadoId => {
         document.getElementById(dadoId).classList.remove('rolling');
       });
 
       // Mostrar valores reales
-      document.getElementById('usuarioDado1').textContent = resultado.usuario.dados.dado1;
-      document.getElementById('usuarioDado2').textContent = resultado.usuario.dados.dado2;
-      document.getElementById('computadoraDado1').textContent = resultado.computadora.dados.dado1;
-      document.getElementById('computadoraDado2').textContent = resultado.computadora.dados.dado2;
+      document.getElementById('usuarioDado1').textContent = usuarioDado1;
+      document.getElementById('usuarioDado2').textContent = usuarioDado2;
+      document.getElementById('computadoraDado1').textContent = computadoraDado1;
+      document.getElementById('computadoraDado2').textContent = computadoraDado2;
       
-      document.getElementById('usuarioTotal').textContent = resultado.usuario.total;
-      document.getElementById('computadoraTotal').textContent = resultado.computadora.total;
+      document.getElementById('usuarioTotal').textContent = usuarioTotal;
+      document.getElementById('computadoraTotal').textContent = computadoraTotal;
+
+      // Determinar resultado
+      let resultado = '';
+      let mensaje = '';
+      let clase = '';
+      let creditosGanados = 0;
+      let creditosPerdidos = 0;
+
+      if (usuarioDado1 === 6 && usuarioDado2 === 6) {
+        // Doble 6 - gana el doble
+        resultado = 'DOBLE 6';
+        mensaje = '🎯 ¡DOBLE 6! ¡GANASTE EL DOBLE!';
+        clase = 'ganador';
+        creditosGanados = apuesta * 2;
+        usuario.creditos += creditosGanados;
+      } else if (computadoraDado1 === 6 && computadoraDado2 === 6) {
+        // Computadora saca doble 6
+        resultado = 'PERDEDOR';
+        mensaje = '❌ ¡La computadora sacó DOBLE 6!';
+        clase = 'perdedor';
+        creditosPerdidos = apuesta;
+        usuario.creditos -= creditosPerdidos;
+      } else if (usuarioTotal > computadoraTotal) {
+        // Usuario gana
+        resultado = 'GANADOR';
+        mensaje = '🎉 ¡GANASTE!';
+        clase = 'ganador';
+        creditosGanados = apuesta;
+        usuario.creditos += creditosGanados;
+      } else if (usuarioTotal < computadoraTotal) {
+        // Computadora gana
+        resultado = 'PERDEDOR';
+        mensaje = '❌ ¡PERDISTE!';
+        clase = 'perdedor';
+        creditosPerdidos = apuesta;
+        usuario.creditos -= creditosPerdidos;
+      } else {
+        // Empate
+        resultado = 'EMPATE';
+        mensaje = '⚖️ ¡EMPATE!';
+        clase = 'empate';
+        // En empate, no se gana ni pierde créditos
+      }
 
       // Mostrar resultado
       const resultadoDiv = document.getElementById('resultadoDiv');
       const resultadoTexto = document.getElementById('resultadoTexto');
+      const resultadoDetalle = document.getElementById('resultadoDetalle');
       const accionesDiv = document.getElementById('accionesDiv');
 
       resultadoDiv.style.display = 'block';
       accionesDiv.style.display = 'block';
 
-      let mensaje = '';
-      let clase = '';
-
-      if (resultado.resultado === 'doble_seis') {
-        mensaje = '🎯 ¡Doble 6! Se juega otra ronda';
-        clase = 'empate';
-        document.getElementById('btnNuevaRonda').style.display = 'block';
-      } else if (resultado.resultado === 'ganador') {
-        mensaje = `🎉 ¡GANASTE! +${resultado.creditosGanados} créditos`;
-        clase = 'ganador';
-        document.getElementById('btnNuevaRonda').style.display = 'none';
-      } else if (resultado.resultado === 'perdedor') {
-        mensaje = '❌ ¡Perdiste! La computadora ganó';
-        clase = 'perdedor';
-        document.getElementById('btnNuevaRonda').style.display = 'none';
-      } else if (resultado.resultado === 'empate') {
-        mensaje = '⚖️ ¡Empate! Se juega otra ronda';
-        clase = 'empate';
-        document.getElementById('btnNuevaRonda').style.display = 'block';
-      }
-
       resultadoTexto.textContent = mensaje;
       resultadoDiv.className = `resultado ${clase}`;
+      
+      let detalleHtml = '';
+      if (creditosGanados > 0) {
+        detalleHtml = `<div class="mt-2">+${creditosGanados} créditos</div>`;
+      } else if (creditosPerdidos > 0) {
+        detalleHtml = `<div class="mt-2">-${creditosPerdidos} créditos</div>`;
+      }
+      resultadoDetalle.innerHTML = detalleHtml;
 
-      // Actualizar saldo del usuario
-      currentUser.creditos = resultado.nuevoSaldo;
-      localStorage.setItem('casinoUser', JSON.stringify(currentUser));
-      document.getElementById('userCredits').textContent = currentUser.creditos.toLocaleString();
+      // Actualizar localStorage y mostrar
+      localStorage.setItem('user', JSON.stringify(usuario));
+      mostrarInfoUsuario();
+      actualizarCreditosDespues();
 
-      // Habilitar botón de jugar
-      document.getElementById('btnJugar').disabled = false;
+      // Guardar en historial
+      guardarEnHistorial({
+        fecha: new Date().toISOString(),
+        apuesta: apuesta,
+        resultado: resultado,
+        usuarioDados: [usuarioDado1, usuarioDado2],
+        computadoraDados: [computadoraDado1, computadoraDado2],
+        usuarioTotal: usuarioTotal,
+        computadoraTotal: computadoraTotal,
+        creditosGanados: creditosGanados,
+        creditosPerdidos: creditosPerdidos,
+        creditosFinales: usuario.creditos
+      });
+
+      // Mostrar historial
+      mostrarHistorial();
+    }
+
+    // Guardar partida en historial
+    function guardarEnHistorial(partida) {
+      historialJuegos.unshift(partida);
+      // Mantener solo las últimas 10 partidas
+      if (historialJuegos.length > 10) {
+        historialJuegos = historialJuegos.slice(0, 10);
+      }
+    }
+
+    // Mostrar historial de partidas
+    function mostrarHistorial() {
+      const historialLista = document.getElementById('historialLista');
+      const historialContainer = document.getElementById('historialContainer');
+      
+      if (historialJuegos.length === 0) {
+        historialContainer.style.display = 'none';
+        return;
+      }
+      
+      historialContainer.style.display = 'block';
+      
+      let html = '';
+      historialJuegos.forEach((partida, index) => {
+        const fecha = new Date(partida.fecha).toLocaleTimeString();
+        const clase = partida.resultado === 'GANADOR' ? 'historial-ganador' : 
+                     partida.resultado === 'PERDEDOR' ? 'historial-perdedor' : 
+                     'historial-empate';
+        
+        html += `
+          <div class="historial-item ${clase}">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong>${partida.resultado}</strong>
+                <div class="small text-muted">${fecha}</div>
+              </div>
+              <div class="text-end">
+                <div>Apuesta: ${partida.apuesta} créditos</div>
+                <div>
+                  ${partida.creditosGanados > 0 ? 
+                    `<span class="text-success">+${partida.creditosGanados}💰</span>` : 
+                    partida.creditosPerdidos > 0 ? 
+                    `<span class="text-danger">-${partida.creditosPerdidos}💰</span>` : 
+                    '<span class="text-warning">0💰</span>'}
+                </div>
+              </div>
+            </div>
+            <div class="small mt-2">
+              Tú: ${partida.usuarioDados[0]}+${partida.usuarioDados[1]}=${partida.usuarioTotal} 
+              | PC: ${partida.computadoraDados[0]}+${partida.computadoraDados[1]}=${partida.computadoraTotal}
+            </div>
+          </div>
+        `;
+      });
+      
+      historialLista.innerHTML = html;
+    }
+
+    // Mostrar error
+    function mostrarError(mensaje) {
+      const resultadoDiv = document.getElementById('resultadoDiv');
+      const resultadoTexto = document.getElementById('resultadoTexto');
+      
+      resultadoDiv.style.display = 'block';
+      resultadoDiv.className = 'resultado perdedor';
+      resultadoTexto.textContent = mensaje;
+      
+      setTimeout(() => {
+        resultadoDiv.style.display = 'none';
+      }, 3000);
     }
 
     // Reiniciar juego
@@ -412,7 +680,28 @@
       document.getElementById('computadoraTotal').textContent = '0';
       document.getElementById('resultadoDiv').style.display = 'none';
       document.getElementById('accionesDiv').style.display = 'none';
+      document.getElementById('historialContainer').style.display = 'none';
+      document.getElementById('apuestaInput').value = '50';
+      document.getElementById('apuestaRange').value = '50';
+      actualizarCreditosDespues();
     }
+
+    // Cargar historial del localStorage al iniciar
+    function cargarHistorial() {
+      const historialGuardado = localStorage.getItem('historialDados');
+      if (historialGuardado) {
+        historialJuegos = JSON.parse(historialGuardado);
+        mostrarHistorial();
+      }
+    }
+
+    // Guardar historial en localStorage
+    function guardarHistorial() {
+      localStorage.setItem('historialDados', JSON.stringify(historialJuegos));
+    }
+
+    // Cargar historial al inicio
+    cargarHistorial();
   </script>
 </body>
 </html>
