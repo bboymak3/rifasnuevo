@@ -12,6 +12,8 @@
     .badge-pendiente { background-color: #ffc107; color: black; }
     .badge-verificado { background-color: #28a745; color: white; }
     .badge-rechazado { background-color: #dc3545; color: white; }
+    .badge-procesando { background-color: #17a2b8; color: white; }
+    .badge-completado { background-color: #28a745; color: white; }
   </style>
 </head>
 <body class="bg-light">
@@ -47,6 +49,10 @@
             <div class="mb-2">
               <strong>Órdenes:</strong><br>
               <span class="stat-number text-secondary" id="totalOrdenes">0</span>
+            </div>
+            <div class="mb-2">
+              <strong>Solicitudes Recarga:</strong><br>
+              <span class="stat-number text-primary" id="totalSolicitudes">0</span>
             </div>
           </div>
           <button class="btn btn-sm btn-primary w-100 mt-2" onclick="cargarEstadisticas()">
@@ -108,6 +114,70 @@
             </div>
           </div>
         </div>
+
+        <!-- Sección de Solicitudes de Recarga (NUEVA) -->
+        <div class="card mt-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">💳 Solicitudes de Recarga</h5>
+            <button class="btn btn-sm btn-primary" onclick="cargarSolicitudesRecarga()">
+              🔄 Actualizar
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Usuario</th>
+                    <th>Monto (Bs)</th>
+                    <th>Créditos</th>
+                    <th>Método</th>
+                    <th>Referencia</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaSolicitudesRecarga">
+                  <tr>
+                    <td colspan="9" class="text-center">Cargando solicitudes...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección de Configuración de Tasas (NUEVA) -->
+        <div class="card mt-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">⚙️ Configuración de Tasas</h5>
+            <button class="btn btn-sm btn-primary" onclick="cargarConfigTasas()">
+              🔄 Actualizar
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Configuración</th>
+                    <th>Descripción</th>
+                    <th>Valor Actual</th>
+                    <th>Última Actualización</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaConfigTasas">
+                  <tr>
+                    <td colspan="5" class="text-center">Cargando configuración...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -121,6 +191,8 @@
       await cargarEstadisticas();
       await cargarTicketsVendidos();
       await cargarOrdenes();
+      await cargarSolicitudesRecarga();
+      await cargarConfigTasas();
     }
 
     async function cargarEstadisticas() {
@@ -139,6 +211,7 @@
           document.getElementById('ticketsDisponibles').textContent = data.data.disponibles;
           document.getElementById('totalRecaudado').textContent = `Bs. ${(data.data.recaudado || 0).toFixed(2)}`;
           document.getElementById('totalOrdenes').textContent = data.data.totalOrdenes;
+          document.getElementById('totalSolicitudes').textContent = data.data.totalSolicitudes || 0;
         }
       } catch (error) {
         console.error('Error cargando estadísticas:', error);
@@ -243,10 +316,126 @@
       }
     }
 
+    // FUNCIÓN NUEVA: Cargar Solicitudes de Recarga
+    async function cargarSolicitudesRecarga() {
+      try {
+        const API_BASE_URL = window.location.origin;
+        const response = await fetch(`${API_BASE_URL}/api/solicitudes-recarga`);
+        
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const tabla = document.getElementById('tablaSolicitudesRecarga');
+        
+        if (data.success) {
+          if (data.data.solicitudes.length === 0) {
+            tabla.innerHTML = '<tr><td colspan="9" class="text-center">No hay solicitudes de recarga</td></tr>';
+            return;
+          }
+          
+          tabla.innerHTML = data.data.solicitudes.map(solicitud => `
+            <tr>
+              <td><small>${solicitud.id}</small></td>
+              <td>
+                <strong>${solicitud.usuario_nombre}</strong><br>
+                <small class="text-muted">${solicitud.usuario_email || 'Sin email'}</small>
+              </td>
+              <td>Bs. ${solicitud.monto}</td>
+              <td>${solicitud.creditos}</td>
+              <td>${solicitud.metodo_pago}</td>
+              <td><code>${solicitud.referencia || 'Sin referencia'}</code></td>
+              <td>
+                <span class="badge ${getRecargaBadgeClass(solicitud.estado)}">
+                  ${solicitud.estado}
+                </span>
+              </td>
+              <td>${new Date(solicitud.fecha_solicitud).toLocaleString()}</td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  ${solicitud.estado === 'pendiente' ? `
+                    <button class="btn btn-success" onclick="aprobarRecarga(${solicitud.id})">
+                      ✅ Aprobar
+                    </button>
+                    <button class="btn btn-danger" onclick="rechazarRecarga(${solicitud.id})">
+                      ❌ Rechazar
+                    </button>
+                  ` : ''}
+                  ${solicitud.estado !== 'pendiente' ? `
+                    <button class="btn btn-warning" onclick="resetearRecarga(${solicitud.id})">
+                      🔄 Resetear
+                    </button>
+                  ` : ''}
+                </div>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('Error cargando solicitudes de recarga:', error);
+        document.getElementById('tablaSolicitudesRecarga').innerHTML = 
+          '<tr><td colspan="9" class="text-center text-danger">Error cargando solicitudes</td></tr>';
+      }
+    }
+
+    // FUNCIÓN NUEVA: Cargar Configuración de Tasas
+    async function cargarConfigTasas() {
+      try {
+        const API_BASE_URL = window.location.origin;
+        const response = await fetch(`${API_BASE_URL}/api/config-tasas`);
+        
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const tabla = document.getElementById('tablaConfigTasas');
+        
+        if (data.success) {
+          if (data.data.configuraciones.length === 0) {
+            tabla.innerHTML = '<tr><td colspan="5" class="text-center">No hay configuración disponible</td></tr>';
+            return;
+          }
+          
+          tabla.innerHTML = data.data.configuraciones.map(config => `
+            <tr>
+              <td><strong>${config.clave}</strong></td>
+              <td>${config.descripcion}</td>
+              <td>
+                ${config.tipo === 'moneda' ? 'Bs. ' : ''}
+                <span id="valor-${config.clave}">${config.valor}</span>
+                ${config.tipo === 'porcentaje' ? '%' : ''}
+              </td>
+              <td>${new Date(config.actualizado).toLocaleString()}</td>
+              <td>
+                <button class="btn btn-sm btn-primary" onclick="editarConfig('${config.clave}')">
+                  ✏️ Editar
+                </button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('Error cargando configuración de tasas:', error);
+        document.getElementById('tablaConfigTasas').innerHTML = 
+          '<tr><td colspan="5" class="text-center text-danger">Error cargando configuración</td></tr>';
+      }
+    }
+
     function getBadgeClass(estado) {
       switch(estado) {
         case 'verificado': return 'badge-verificado';
         case 'rechazado': return 'badge-rechazado';
+        default: return 'badge-pendiente';
+      }
+    }
+
+    function getRecargaBadgeClass(estado) {
+      switch(estado) {
+        case 'completado': return 'badge-completado';
+        case 'rechazado': return 'badge-rechazado';
+        case 'procesando': return 'badge-procesando';
         default: return 'badge-pendiente';
       }
     }
@@ -273,7 +462,8 @@
           const data = await response.json();
           if (data.success) {
             alert('✅ Estado actualizado correctamente');
-            cargarOrdenes(); // Recargar la tabla
+            cargarOrdenes();
+            cargarEstadisticas();
           } else {
             alert('❌ Error: ' + data.error);
           }
@@ -286,14 +476,114 @@
       }
     }
 
-    // === FUNCIÓN NUEVA: REINICIAR RIFA ===
+    // FUNCIONES NUEVAS: Manejo de Recargas
+    async function aprobarRecarga(solicitudId) {
+      if (!confirm('¿Aprobar esta solicitud de recarga?')) return;
+      
+      try {
+        const API_BASE_URL = window.location.origin;
+        const response = await fetch(`${API_BASE_URL}/api/aprobar-recarga`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ solicitudId })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          alert('✅ Recarga aprobada correctamente');
+          cargarSolicitudesRecarga();
+          cargarEstadisticas();
+        } else {
+          alert('❌ Error: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Error aprobando recarga:', error);
+        alert('❌ Error al aprobar la recarga');
+      }
+    }
+
+    async function rechazarRecarga(solicitudId) {
+      if (!confirm('¿Rechazar esta solicitud de recarga?')) return;
+      
+      try {
+        const API_BASE_URL = window.location.origin;
+        const response = await fetch(`${API_BASE_URL}/api/rechazar-recarga`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ solicitudId })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          alert('✅ Recarga rechazada correctamente');
+          cargarSolicitudesRecarga();
+        } else {
+          alert('❌ Error: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Error rechazando recarga:', error);
+        alert('❌ Error al rechazar la recarga');
+      }
+    }
+
+    async function resetearRecarga(solicitudId) {
+      if (!confirm('¿Resetear esta solicitud a estado pendiente?')) return;
+      
+      try {
+        const API_BASE_URL = window.location.origin;
+        const response = await fetch(`${API_BASE_URL}/api/resetear-recarga`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ solicitudId })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          alert('✅ Solicitud reseteada a pendiente');
+          cargarSolicitudesRecarga();
+        } else {
+          alert('❌ Error: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Error reseteando recarga:', error);
+        alert('❌ Error al resetear la solicitud');
+      }
+    }
+
+    // FUNCIÓN NUEVA: Editar Configuración
+    async function editarConfig(clave) {
+      const nuevoValor = prompt(`Ingrese nuevo valor para ${clave}:`, 
+        document.getElementById(`valor-${clave}`).textContent);
+      
+      if (nuevoValor === null) return;
+      
+      try {
+        const API_BASE_URL = window.location.origin;
+        const response = await fetch(`${API_BASE_URL}/api/editar-config`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clave, valor: nuevoValor })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          alert('✅ Configuración actualizada correctamente');
+          cargarConfigTasas();
+        } else {
+          alert('❌ Error: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Error editando configuración:', error);
+        alert('❌ Error al actualizar la configuración');
+      }
+    }
+
+    // === FUNCIÓN REINICIAR RIFA ===
     async function reiniciarRifa() {
-      // Confirmación EXTRA de seguridad
       const confirmacion1 = confirm('🚨 ¡ADVERTENCIA CRÍTICA!\n\n¿Estás ABSOLUTAMENTE seguro de que quieres REINICIAR toda la rifa?\n\n⚠️ Esto borrará:\n• Todas las órdenes de compra\n• Todo el historial de ventas\n• Todo el registro de recaudación\n\nLos tickets quedarán disponibles nuevamente.');
       
       if (!confirmacion1) return;
 
-      // Segunda confirmación
       const confirmacion2 = prompt('Para confirmar el reinicio, escribe: "REINICIAR"');
       
       if (confirmacion2 !== 'REINICIAR') {
@@ -317,8 +607,6 @@
 
         if (data.success) {
           alert('✅ ' + data.message + '\n\nTickets actualizados: ' + data.datos.ticketsActualizados + '\nÓrdenes eliminadas: ' + data.datos.ordenesEliminadas);
-          
-          // Recargar todo el panel
           cargarPanelAdmin();
         } else {
           alert('❌ Error: ' + data.error);
@@ -329,6 +617,7 @@
       }
     }
 
+    // Recargar automáticamente cada 30 segundos
     setInterval(() => {
       cargarPanelAdmin();
     }, 30000);

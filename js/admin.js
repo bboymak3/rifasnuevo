@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', function() {
+﻿﻿﻿document.addEventListener('DOMContentLoaded', function() {
   cargarPanelAdmin();
 });
 
@@ -6,6 +6,8 @@ async function cargarPanelAdmin() {
   await cargarEstadisticas();
   await cargarTicketsVendidos();
   await cargarOrdenes();
+  await cargarSolicitudesRecarga();
+  await cargarConfigTasas();
 }
 
 async function cargarEstadisticas() {
@@ -178,6 +180,209 @@ async function cambiarEstado(ordenId, nuevoEstado) {
   } catch (error) {
     console.error('Error cambiando estado:', error);
     alert('❌ Error al cambiar el estado');
+  }
+}
+
+// Función para cargar solicitudes de recarga
+async function cargarSolicitudesRecarga() {
+  try {
+    const API_BASE_URL = window.location.origin;
+    const response = await fetch(`${API_BASE_URL}/api/solicitudes-recarga`);
+    
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    const tabla = document.getElementById('tablaSolicitudesRecarga');
+    
+    if (data.success) {
+      if (data.data.solicitudes.length === 0) {
+        tabla.innerHTML = '<tr><td colspan="9" class="text-center">No hay solicitudes de recarga</td></tr>';
+        return;
+      }
+      
+      tabla.innerHTML = data.data.solicitudes.map(solicitud => `
+        <tr>
+          <td><small>${solicitud.id}</small></td>
+          <td>
+            <strong>${solicitud.usuario_nombre}</strong><br>
+            <small class="text-muted">${solicitud.usuario_email}</small><br>
+            <small class="text-muted">${solicitud.usuario_telefono || 'Sin teléfono'}</small>
+          </td>
+          <td>Bs. ${solicitud.monto}</td>
+          <td>${solicitud.creditos_solicitados || Math.floor((solicitud.monto * 100) / 250)} créditos</td>
+          <td>${solicitud.metodo_pago}</td>
+          <td><code>${solicitud.referencia_pago || 'N/A'}</code></td>
+          <td>
+            <span class="badge ${getBadgeClassRecarga(solicitud.estado)}">
+              ${solicitud.estado}
+            </span>
+          </td>
+          <td>${new Date(solicitud.fecha_solicitud).toLocaleString()}</td>
+          <td>
+            ${solicitud.estado === 'pendiente' ? `
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-success" onclick="procesarRecarga(${solicitud.id}, 'aprobada')">
+                  ✅ Aprobar
+                </button>
+                <button class="btn btn-danger" onclick="procesarRecarga(${solicitud.id}, 'rechazada')">
+                  ❌ Rechazar
+                </button>
+              </div>
+            ` : `
+              <small class="text-muted">Procesada</small><br>
+              <small>${solicitud.fecha_procesado ? new Date(solicitud.fecha_procesado).toLocaleDateString() : 'N/A'}</small>
+            `}
+          </td>
+        </tr>
+      `).join('');
+    }
+  } catch (error) {
+    console.error('Error cargando solicitudes de recarga:', error);
+    document.getElementById('tablaSolicitudesRecarga').innerHTML = 
+      '<tr><td colspan="9" class="text-center text-danger">Error cargando solicitudes</td></tr>';
+  }
+}
+
+// Función para procesar recargas (aprobar/rechazar)
+async function procesarRecarga(recargaId, accion) {
+  if (!confirm(`¿Estás seguro de ${accion === 'aprobada' ? 'aprobar' : 'rechazar'} esta recarga?`)) {
+    return;
+  }
+
+  try {
+    const API_BASE_URL = window.location.origin;
+    const response = await fetch(`${API_BASE_URL}/api/procesar-recarga`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        recargaId: recargaId, 
+        accion: accion,
+        adminId: 1 // En una app real, usarías el ID del admin logueado
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success) {
+        alert(`✅ Recarga ${accion === 'aprobada' ? 'aprobada' : 'rechazada'} correctamente`);
+        cargarSolicitudesRecarga(); // Recargar la tabla
+      } else {
+        alert('❌ Error: ' + data.error);
+      }
+    } else {
+      throw new Error(`Error ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Error procesando recarga:', error);
+    alert('❌ Error al procesar la recarga');
+  }
+}
+
+// Función para cargar configuración de tasas
+async function cargarConfigTasas() {
+  try {
+    const API_BASE_URL = window.location.origin;
+    const response = await fetch(`${API_BASE_URL}/api/config-tasas`);
+    
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    const tabla = document.getElementById('tablaConfigTasas');
+    
+    if (data.success) {
+      if (data.data.tasas.length === 0) {
+        tabla.innerHTML = '<tr><td colspan="5" class="text-center">No hay configuración de tasas</td></tr>';
+        return;
+      }
+      
+      tabla.innerHTML = data.data.tasas.map(tasa => `
+        <tr>
+          <td>
+            <strong>${tasa.tipo.replace(/_/g, ' ').toUpperCase()}</strong>
+          </td>
+          <td>${tasa.descripcion || 'Sin descripción'}</td>
+          <td>
+            <span class="badge bg-primary">${tasa.valor}</span>
+          </td>
+          <td>${new Date(tasa.fecha_actualizacion).toLocaleString()}</td>
+          <td>
+            <button class="btn btn-sm btn-warning" onclick="editarTasa('${tasa.tipo}', ${tasa.valor}, '${tasa.descripcion || ''}')">
+              ✏️ Editar
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+  } catch (error) {
+    console.error('Error cargando configuración de tasas:', error);
+    document.getElementById('tablaConfigTasas').innerHTML = 
+      '<tr><td colspan="5" class="text-center text-danger">Error cargando configuración</td></tr>';
+  }
+}
+
+// Función para editar tasa
+function editarTasa(tipo, valorActual, descripcion) {
+  const nuevoValor = prompt(`Editar ${tipo.replace(/_/g, ' ').toUpperCase()}\n\nDescripción: ${descripcion}\nValor actual: ${valorActual}\n\nIngresa el nuevo valor:`, valorActual);
+  
+  if (nuevoValor === null) return; // Usuario canceló
+  
+  const valorNumerico = parseFloat(nuevoValor);
+  if (isNaN(valorNumerico)) {
+    alert('❌ Por favor ingresa un valor numérico válido');
+    return;
+  }
+  
+  if (valorNumerico <= 0) {
+    alert('❌ El valor debe ser mayor a 0');
+    return;
+  }
+  
+  actualizarTasa(tipo, valorNumerico);
+}
+
+// Función para actualizar tasa en el servidor
+async function actualizarTasa(tipo, nuevoValor) {
+  try {
+    const API_BASE_URL = window.location.origin;
+    const response = await fetch(`${API_BASE_URL}/api/actualizar-tasa`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        tipo: tipo, 
+        nuevoValor: nuevoValor
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success) {
+        alert('✅ Tasa actualizada correctamente');
+        cargarConfigTasas(); // Recargar la tabla
+      } else {
+        alert('❌ Error: ' + data.error);
+      }
+    } else {
+      throw new Error(`Error ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Error actualizando tasa:', error);
+    alert('❌ Error al actualizar la tasa');
+  }
+}
+
+function getBadgeClassRecarga(estado) {
+  switch(estado) {
+    case 'aprobada': return 'badge-verificado';
+    case 'rechazada': return 'badge-rechazado';
+    default: return 'badge-pendiente';
   }
 }
 
