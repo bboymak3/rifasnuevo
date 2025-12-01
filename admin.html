@@ -45,10 +45,6 @@
     .alert-access {
       display: none;
     }
-    .loading {
-      display: none;
-      text-align: center;
-    }
   </style>
 </head>
 <body>
@@ -65,10 +61,6 @@
               ❌ Clave incorrecta. Intenta nuevamente.
             </div>
             
-            <div class="alert alert-info loading" id="loading">
-              🔄 Verificando clave...
-            </div>
-            
             <form id="loginForm">
               <div class="mb-3">
                 <label for="clave" class="form-label">Clave de acceso *</label>
@@ -76,7 +68,7 @@
                 <div class="form-text">Solo personal autorizado.</div>
               </div>
               
-              <button type="submit" class="btn btn-login mt-3" id="btnSubmit">
+              <button type="submit" class="btn btn-login mt-3">
                 🚪 Ingresar al Panel
               </button>
             </form>
@@ -91,51 +83,25 @@
   </div>
 
   <script>
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
       const clave = document.getElementById('clave').value;
       const alertError = document.getElementById('alertError');
-      const loading = document.getElementById('loading');
-      const btnSubmit = document.getElementById('btnSubmit');
       
-      // Mostrar loading y deshabilitar botón
-      loading.style.display = 'block';
-      alertError.style.display = 'none';
-      btnSubmit.disabled = true;
+      // CLAVE DE ACCESO - Cámbiala por la que prefieras
+      const CLAVE_CORRECTA = "moto2024"; // ← ESTA ES LA CLAVE
       
-      try {
-        // Llamar a la API para verificar la clave
-        const response = await fetch('/api/verificar-clave', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ clave: clave })
-        });
-        
-        const result = await response.json();
-        
-        if (result.exito) {
-          // Clave correcta, redirigir al admin
-          window.location.href = "admin-panel.html";
-        } else {
-          // Clave incorrecta
-          mostrarError();
-        }
-      } catch (error) {
-        console.error('Error al verificar clave:', error);
-        mostrarError();
-      } finally {
-        loading.style.display = 'none';
-        btnSubmit.disabled = false;
-      }
-      
-      function mostrarError() {
+      if (clave === CLAVE_CORRECTA) {
+        // Clave correcta, redirigir al admin
+        window.location.href = "admin-panel.html";
+      } else {
+        // Clave incorrecta, mostrar error
         alertError.style.display = 'block';
         document.getElementById('clave').value = '';
         document.getElementById('clave').focus();
         
+        // Ocultar el error después de 3 segundos
         setTimeout(() => {
           alertError.style.display = 'none';
         }, 3000);
