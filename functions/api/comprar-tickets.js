@@ -1,4 +1,4 @@
-﻿// functions/api/comprar-tickets.js - VERSIÓN ACTUALIZADA
+﻿// functions/api/comprar-tickets.js - VERSIÓN SIMPLIFICADA
 export async function onRequest(context) {
   const { request, env } = context;
   
@@ -30,19 +30,36 @@ export async function onRequest(context) {
   }
 
   try {
-    const data = await request.json();
-    const { userId, nombre, telefono, tickets, totalCreditos } = data;
-    
-    console.log('🛒 Procesando compra para usuario:', userId);
-    console.log('📋 Tickets a comprar:', tickets);
-    console.log('💰 Total créditos:', totalCreditos);
-    
-    // Validar datos requeridos
-    if (!userId || !nombre || !tickets || !Array.isArray(tickets) || tickets.length === 0 || totalCreditos === undefined) {
+    // Obtener datos
+    let data;
+    try {
+      data = await request.json();
+    } catch (e) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Datos inválidos: userId, nombre, tickets (array), totalCreditos son requeridos' 
+          error: 'JSON inválido' 
+        }),
+        {
+          status: 400,
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders 
+          }
+        }
+      );
+    }
+    
+    const { userId, nombre, telefono, tickets, totalCreditos } = data;
+    
+    console.log('📤 Datos recibidos:', { userId, nombre, tickets, totalCreditos });
+    
+    // Validaciones básicas
+    if (!userId || !nombre || !tickets || !Array.isArray(tickets) || tickets.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Datos incompletos o inválidos' 
         }),
         {
           status: 400,
@@ -56,10 +73,10 @@ export async function onRequest(context) {
 
     const db = env.DB;
     
-    // 1. Verificar usuario y créditos
-    const usuario = await db.prepare(`
-      SELECT id, nombre, email, creditos FROM usuarios WHERE id = ?
-    `).bind(userId).first();
+    // 1. Verificar usuario
+    const usuario = await db.prepare(
+      'SELECT id, nombre, creditos FROM usuarios WHERE id = ?'
+    ).bind(userId).first();
 
     if (!usuario) {
       return new Response(
@@ -77,12 +94,13 @@ export async function onRequest(context) {
       );
     }
 
-    // Verificar créditos suficientes
-    if (usuario.creditos < totalCreditos) {
+    // 2. Verificar créditos
+    const creditosNecesarios = totalCreditos || (tickets.length * 100);
+    if (usuario.creditos < creditosNecesarios) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `Créditos insuficientes. Tienes ${usuario.creditos} créditos, necesitas ${totalCreditos}` 
+          error: `Créditos insuficientes. Disponibles: ${usuario.creditos}, Necesarios: ${creditosNecesarios}` 
         }),
         {
           status: 400,
@@ -94,19 +112,19 @@ export async function onRequest(context) {
       );
     }
 
-    // 2. Verificar que los tickets estén disponibles
+    // 3. Verificar tickets disponibles
     const placeholders = tickets.map(() => '?').join(',');
-    const ticketsCheck = await db
+    const ticketsOcupados = await db
       .prepare(`SELECT numero FROM tickets WHERE numero IN (${placeholders}) AND vendido = 1`)
       .bind(...tickets)
       .all();
 
-    if (ticketsCheck.results.length > 0) {
-      const ocupados = ticketsCheck.results.map(t => t.numero);
+    if (ticketsOcupados.results.length > 0) {
+      const ocupados = ticketsOcupados.results.map(t => t.numero);
       return new Response(
         JSON.stringify({
           success: false,
-          error: `Algunos tickets ya están vendidos: ${ocupados.join(', ')}`
+          error: `Tickets ya vendidos: ${ocupados.join(', ')}`
         }),
         {
           status: 400,
@@ -118,80 +136,60 @@ export async function onRequest(context) {
       );
     }
 
-    // 3. Procesar compra en una transacción
+    // 4. Procesar compra
     const fecha = new Date().toISOString();
     
-    try {
-      // Actualizar créditos del usuario
+    // Descontar créditos
+    await db
+      .prepare('UPDATE usuarios SET creditos = creditos - ? WHERE id = ?')
+      .bind(creditosNecesarios, userId)
+      .run();
+
+    // Registrar compra
+    await db
+      .prepare(`
+        INSERT INTO compras (userId, nombre, telefono, tickets, total_creditos, fecha)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `)
+      .bind(userId, nombre, telefono || '', JSON.stringify(tickets), creditosNecesarios, fecha)
+      .run();
+
+    // Marcar tickets como vendidos
+    for (const ticketNum of tickets) {
       await db
-        .prepare('UPDATE usuarios SET creditos = creditos - ? WHERE id = ?')
-        .bind(totalCreditos, userId)
+        .prepare('UPDATE tickets SET vendido = 1, userId = ?, fecha_compra = ? WHERE numero = ?')
+        .bind(userId, fecha, ticketNum)
         .run();
-
-      // Registrar compra
-      const compraResult = await db
-        .prepare(`
-          INSERT INTO compras (userId, nombre, telefono, tickets, total_creditos, fecha)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `)
-        .bind(userId, nombre, telefono || '', JSON.stringify(tickets), totalCreditos, fecha)
-        .run();
-
-      // Marcar tickets como vendidos
-      for (const ticketNum of tickets) {
-        await db
-          .prepare(`
-            UPDATE tickets 
-            SET vendido = 1, userId = ?, fecha_compra = ?
-            WHERE numero = ?
-          `)
-          .bind(userId, fecha, ticketNum)
-          .run();
-      }
-
-      // 4. Obtener créditos actualizados
-      const usuarioActualizado = await db
-        .prepare('SELECT creditos FROM usuarios WHERE id = ?')
-        .bind(userId)
-        .first();
-
-      console.log('✅ Compra exitosa. Créditos restantes:', usuarioActualizado.creditos);
-      
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'Compra realizada con éxito',
-          creditosRestantes: usuarioActualizado.creditos,
-          ticketsComprados: tickets,
-          compraId: compraResult.lastInsertId
-        }),
-        {
-          headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders 
-          }
-        }
-      );
-
-    } catch (dbError) {
-      console.error('💥 Error en transacción de base de datos:', dbError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Error al procesar la compra en la base de datos'
-        }),
-        {
-          status: 500,
-          headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders 
-          }
-        }
-      );
     }
 
+    // Obtener créditos actualizados
+    const usuarioActualizado = await db
+      .prepare('SELECT creditos FROM usuarios WHERE id = ?')
+      .bind(userId)
+      .first();
+
+    console.log('✅ Compra exitosa procesada');
+    
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'Compra realizada exitosamente',
+        creditosRestantes: usuarioActualizado.creditos,
+        ticketsComprados: tickets,
+        totalPagado: creditosNecesarios
+      }),
+      {
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders 
+        }
+      }
+    );
+
   } catch (error) {
-    console.error('💥 ERROR general en compra:', error);
+    console.error('💥 ERROR en compra-tickets:', error);
+    console.error('Stack:', error.stack);
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
