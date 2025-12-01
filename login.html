@@ -1,102 +1,68 @@
-﻿<!DOCTYPE html>
+﻿<!-- login.html - VERSIÓN CORREGIDA -->
+<!DOCTYPE html>
 <html>
 <head>
-    <title>Login - Rifas Nuevo</title>
+    <title>Login - Sistema de Rifas</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 400px;
-            margin: 50px auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        .login-box {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 12px;
-            width: 100%;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        .error {
-            color: red;
-            background: #ffe6e6;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            display: none;
-        }
-        .success {
-            color: green;
-            background: #e6ffe6;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            display: none;
-        }
-        .debug {
-            background: #f0f0f0;
-            padding: 10px;
-            margin: 20px 0;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 12px;
-            display: none;
-        }
+        /* Estilos igual que antes */
+        body { font-family: Arial; margin: 0; padding: 20px; background: #f5f5f5; }
+        .login-box { max-width: 400px; margin: 50px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="login-box">
-        <h2>🎫 Login Rifas Nuevo</h2>
-        <p>Base de datos: <strong>rifasv2</strong></p>
-        
-        <div id="message" class="error"></div>
-        <div id="debugInfo" class="debug"></div>
-        
+        <h2>Login</h2>
         <input type="email" id="email" placeholder="Email" value="admin@rifas.com">
         <input type="password" id="password" placeholder="Contraseña" value="admin123">
         <button onclick="login()">Iniciar Sesión</button>
-        
-        <div style="margin-top: 20px; font-size: 14px; color: #666;">
-            <p><strong>Para probar:</strong></p>
-            <p>Email: admin@rifas.com</p>
-            <p>Contraseña: admin123</p>
-        </div>
-        
-        <button onclick="testConnection()" style="background: #28a745; margin-top: 10px;">
-            🔍 Probar Conexión API
-        </button>
+        <div id="message" style="margin-top: 10px;"></div>
     </div>
 
     <script>
+        // Verificar SI YA está logueado - SOLO UNA VEZ al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Verificando estado de login...');
+            
+            // Leer localStorage UNA sola vez
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const userData = localStorage.getItem('user');
+            
+            console.log('📊 Estado actual:', {
+                isLoggedIn: isLoggedIn,
+                hasUserData: !!userData,
+                location: window.location.pathname
+            });
+            
+            // Solo redirigir si realmente está logueado y no estamos en proceso de login
+            if (isLoggedIn === 'true' && userData) {
+                console.log('✅ Usuario ya logueado, redirigiendo...');
+                // Pequeño delay para evitar bucles
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 100);
+            } else {
+                console.log('❌ Usuario no logueado, mostrando formulario');
+            }
+        });
+
         async function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const message = document.getElementById('message');
-            const debug = document.getElementById('debugInfo');
             
-            message.textContent = 'Conectando...';
-            message.className = '';
-            message.style.display = 'block';
-            debug.style.display = 'none';
+            if (!email || !password) {
+                message.innerHTML = 'Por favor completa todos los campos';
+                message.style.color = 'red';
+                return;
+            }
+            
+            message.innerHTML = 'Conectando...';
+            message.style.color = 'blue';
             
             try {
-                console.log('📤 Enviando login a API...');
+                console.log('📤 Enviando credenciales...');
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: {
@@ -108,86 +74,49 @@
                     })
                 });
                 
-                console.log('📥 Respuesta recibida:', response.status);
                 const data = await response.json();
-                console.log('📊 Datos:', data);
-                
-                // Mostrar información de debug
-                debug.innerHTML = `
-                    <strong>Debug Info:</strong><br>
-                    Status: ${response.status}<br>
-                    OK: ${response.ok}<br>
-                    Success: ${data.success}<br>
-                    Error: ${data.error || 'Ninguno'}<br>
-                    User ID: ${data.user?.id || 'N/A'}
-                `;
-                debug.style.display = 'block';
+                console.log('📥 Respuesta del servidor:', data);
                 
                 if (response.ok && data.success) {
-                    // Guardar datos
-                    localStorage.setItem('userId', data.user.id);
-                    localStorage.setItem('nombre', data.user.nombre);
-                    localStorage.setItem('email', data.user.email);
-                    localStorage.setItem('telefono', data.user.telefono || '');
-                    localStorage.setItem('creditos', data.user.creditos);
+                    // GUARDAR datos de forma segura
+                    const userData = {
+                        id: data.user.id,
+                        nombre: data.user.nombre,
+                        email: data.user.email,
+                        telefono: data.user.telefono || '',
+                        creditos: data.user.creditos || 0
+                    };
+                    
+                    // Limpiar primero para evitar conflictos
+                    localStorage.clear();
+                    
+                    // Guardar datos en localStorage
+                    localStorage.setItem('user', JSON.stringify(userData));
                     localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('loginTime', Date.now().toString());
                     
-                    message.textContent = '✅ ¡Login exitoso! Redirigiendo...';
-                    message.className = 'success';
+                    console.log('💾 Datos guardados en localStorage:', userData);
+                    console.log('🔄 Redirigiendo a index.html...');
                     
+                    message.innerHTML = '✅ Login exitoso! Redirigiendo...';
+                    message.style.color = 'green';
+                    
+                    // Redirigir CON delay para asegurar que se guardaron los datos
                     setTimeout(() => {
                         window.location.href = 'index.html';
-                    }, 1000);
+                    }, 500);
+                    
                 } else {
-                    message.textContent = `❌ Error: ${data.error || 'Error desconocido'}`;
-                    message.className = 'error';
+                    message.innerHTML = '❌ Error: ' + (data.error || 'Credenciales incorrectas');
+                    message.style.color = 'red';
+                    console.error('Error de login:', data.error);
                 }
                 
             } catch (error) {
-                console.error('💥 Error completo:', error);
-                message.textContent = `❌ Error de conexión: ${error.message}`;
-                message.className = 'error';
-                debug.innerHTML = `<strong>Error:</strong> ${error.message}`;
-                debug.style.display = 'block';
+                message.innerHTML = '❌ Error de conexión: ' + error.message;
+                message.style.color = 'red';
+                console.error('Error de red:', error);
             }
-        }
-        
-        async function testConnection() {
-            const message = document.getElementById('message');
-            const debug = document.getElementById('debugInfo');
-            
-            message.textContent = '🔍 Probando conexión con API...';
-            message.className = '';
-            message.style.display = 'block';
-            
-            try {
-                // Primero probar si el endpoint existe
-                const testResponse = await fetch('/api/login', {
-                    method: 'OPTIONS'
-                });
-                
-                debug.innerHTML = `
-                    <strong>Test de Conexión:</strong><br>
-                    OPTIONS Status: ${testResponse.status}<br>
-                    URL: /api/login<br>
-                    CORS: ${testResponse.headers.get('Access-Control-Allow-Origin') || 'No configurado'}
-                `;
-                debug.style.display = 'block';
-                
-                message.textContent = '✅ Endpoint disponible. Ahora prueba el login.';
-                message.className = 'success';
-                
-            } catch (error) {
-                message.textContent = `❌ No se puede conectar al API: ${error.message}`;
-                message.className = 'error';
-                debug.innerHTML = `<strong>Error conexión:</strong> ${error.message}`;
-                debug.style.display = 'block';
-            }
-        }
-        
-        // Verificar si ya está logueado
-        if (localStorage.getItem('isLoggedIn') === 'true') {
-            window.location.href = 'index.html';
         }
     </script>
 </body>
