@@ -1,4 +1,4 @@
-﻿﻿﻿document.addEventListener('DOMContentLoaded', function() {
+﻿document.addEventListener('DOMContentLoaded', function() {
   cargarPanelAdmin();
 });
 
@@ -79,16 +79,6 @@ async function cargarOrdenes() {
     const tabla = document.getElementById('tablaOrdenes');
     
     if (data.success) {
-      // 🔍 DEBUG: VER QUÉ CAMPOS LLEGAN REALMENTE
-      console.log('=== DEBUG - ESTRUCTURA DE DATOS ===');
-      if (data.data.ordenes.length > 0) {
-        console.log('Primera orden completa:', data.data.ordenes[0]);
-        console.log('Campos disponibles:', Object.keys(data.data.ordenes[0]));
-        console.log('Valor de tickets:', data.data.ordenes[0].tickets);
-        console.log('Valor de ticket_id:', data.data.ordenes[0].ticket_id);
-      }
-      console.log('=== FIN DEBUG ===');
-      
       if (data.data.ordenes.length === 0) {
         tabla.innerHTML = '<tr><td colspan="9" class="text-center">No hay órdenes registradas</td></tr>';
         return;
@@ -186,6 +176,7 @@ async function cambiarEstado(ordenId, nuevoEstado) {
 // Función para cargar solicitudes de recarga
 async function cargarSolicitudesRecarga() {
   try {
+    console.log('🔧 Cargando solicitudes de recarga...');
     const API_BASE_URL = window.location.origin;
     const response = await fetch(`${API_BASE_URL}/api/solicitudes-recarga`);
     
@@ -196,8 +187,10 @@ async function cargarSolicitudesRecarga() {
     const data = await response.json();
     const tabla = document.getElementById('tablaSolicitudesRecarga');
     
+    console.log('📦 Datos recibidos:', data);
+    
     if (data.success) {
-      if (data.data.solicitudes.length === 0) {
+      if (!data.data.solicitudes || data.data.solicitudes.length === 0) {
         tabla.innerHTML = '<tr><td colspan="9" class="text-center">No hay solicitudes de recarga</td></tr>';
         return;
       }
@@ -206,22 +199,22 @@ async function cargarSolicitudesRecarga() {
         <tr>
           <td><small>${solicitud.id}</small></td>
           <td>
-            <strong>${solicitud.usuario_nombre}</strong><br>
-            <small class="text-muted">${solicitud.usuario_email}</small><br>
+            <strong>${solicitud.usuario_nombre || 'N/A'}</strong><br>
+            <small class="text-muted">${solicitud.usuario_email || 'Sin email'}</small><br>
             <small class="text-muted">${solicitud.usuario_telefono || 'Sin teléfono'}</small>
           </td>
-          <td>Bs. ${solicitud.monto}</td>
-          <td>${solicitud.creditos_solicitados || Math.floor((solicitud.monto * 100) / 250)} créditos</td>
-          <td>${solicitud.metodo_pago}</td>
+          <td>Bs. ${solicitud.monto || 0}</td>
+          <td>${solicitud.creditos_solicitados || Math.floor(((solicitud.monto || 0) * 100) / 250)} créditos</td>
+          <td>${solicitud.metodo_pago || 'N/A'}</td>
           <td><code>${solicitud.referencia_pago || 'N/A'}</code></td>
           <td>
             <span class="badge ${getBadgeClassRecarga(solicitud.estado)}">
-              ${solicitud.estado}
+              ${solicitud.estado || 'pendiente'}
             </span>
           </td>
-          <td>${new Date(solicitud.fecha_solicitud).toLocaleString()}</td>
+          <td>${solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleString() : 'N/A'}</td>
           <td>
-            ${solicitud.estado === 'pendiente' ? `
+            ${(solicitud.estado === 'pendiente' || !solicitud.estado) ? `
               <div class="btn-group btn-group-sm">
                 <button class="btn btn-success" onclick="procesarRecarga(${solicitud.id}, 'aprobada')">
                   ✅ Aprobar
@@ -241,12 +234,14 @@ async function cargarSolicitudesRecarga() {
   } catch (error) {
     console.error('Error cargando solicitudes de recarga:', error);
     document.getElementById('tablaSolicitudesRecarga').innerHTML = 
-      '<tr><td colspan="9" class="text-center text-danger">Error cargando solicitudes</td></tr>';
+      '<tr><td colspan="9" class="text-center text-danger">Error cargando solicitudes: ' + error.message + '</td></tr>';
   }
 }
 
 // Función para procesar recargas (aprobar/rechazar)
 async function procesarRecarga(recargaId, accion) {
+  console.log('🔄 Procesando recarga:', recargaId, accion);
+  
   if (!confirm(`¿Estás seguro de ${accion === 'aprobada' ? 'aprobar' : 'rechazar'} esta recarga?`)) {
     return;
   }
@@ -265,70 +260,128 @@ async function procesarRecarga(recargaId, accion) {
       })
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success) {
-        alert(`✅ Recarga ${accion === 'aprobada' ? 'aprobada' : 'rechazada'} correctamente`);
-        cargarSolicitudesRecarga(); // Recargar la tabla
-      } else {
-        alert('❌ Error: ' + data.error);
-      }
+    console.log('📊 Respuesta status:', response.status);
+    
+    const text = await response.text();
+    console.log('📦 Respuesta raw:', text);
+    
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      console.error('❌ Error parseando JSON:', parseError);
+      throw new Error('Respuesta no es JSON: ' + text.substring(0, 100));
+    }
+
+    if (data.success) {
+      alert(`✅ Recarga ${accion === 'aprobada' ? 'aprobada' : 'rechazada'} correctamente`);
+      cargarSolicitudesRecarga(); // Recargar la tabla
     } else {
-      throw new Error(`Error ${response.status}`);
+      alert('❌ Error: ' + data.error);
     }
   } catch (error) {
-    console.error('Error procesando recarga:', error);
-    alert('❌ Error al procesar la recarga');
+    console.error('❌ Error procesando recarga:', error);
+    alert('❌ Error al procesar la recarga: ' + error.message);
   }
 }
 
-// Función para cargar configuración de tasas
+// Función para cargar configuración de tasas (CORREGIDA)
 async function cargarConfigTasas() {
   try {
+    console.log('🔧 Cargando configuración de tasas...');
     const API_BASE_URL = window.location.origin;
     const response = await fetch(`${API_BASE_URL}/api/config-tasas`);
     
+    console.log('📊 Status de respuesta:', response.status, response.ok);
+    
     if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     
     const data = await response.json();
+    console.log('📦 Datos recibidos:', data);
+    
     const tabla = document.getElementById('tablaConfigTasas');
     
-    if (data.success) {
+    if (!tabla) {
+      console.error('❌ No se encontró el elemento tablaConfigTasas');
+      return;
+    }
+    
+    // Verificar estructura de datos
+    if (data.success && data.data && data.data.tasas && Array.isArray(data.data.tasas)) {
+      console.log(`✅ Se encontraron ${data.data.tasas.length} tasas`);
+      
       if (data.data.tasas.length === 0) {
-        tabla.innerHTML = '<tr><td colspan="5" class="text-center">No hay configuración de tasas</td></tr>';
+        tabla.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay tasas configuradas</td></tr>';
         return;
       }
       
-      tabla.innerHTML = data.data.tasas.map(tasa => `
+      // Crear HTML de las tasas
+      const filasHTML = data.data.tasas.map(tasa => {
+        // Sanitizar valores para evitar errores en el onclick
+        const tipo = tasa.tipo || '';
+        const valor = tasa.valor || 0;
+        const descripcion = (tasa.descripcion || 'Sin descripción').replace(/'/g, "\\'").replace(/`/g, "\\`");
+        const fecha = tasa.fecha_actualizacion ? new Date(tasa.fecha_actualizacion).toLocaleString() : 'N/A';
+        
+        return `
         <tr>
           <td>
-            <strong>${tasa.tipo.replace(/_/g, ' ').toUpperCase()}</strong>
+            <strong>${tipo.replace(/_/g, ' ').toUpperCase()}</strong>
           </td>
-          <td>${tasa.descripcion || 'Sin descripción'}</td>
+          <td>${descripcion}</td>
           <td>
-            <span class="badge bg-primary">${tasa.valor}</span>
+            <span class="badge bg-primary">${valor}</span>
           </td>
-          <td>${new Date(tasa.fecha_actualizacion).toLocaleString()}</td>
+          <td>${fecha}</td>
           <td>
-            <button class="btn btn-sm btn-warning" onclick="editarTasa('${tasa.tipo}', ${tasa.valor}, '${tasa.descripcion || ''}')">
+            <button class="btn btn-sm btn-warning" 
+              onclick="editarTasa('${tipo}', ${valor}, \`${descripcion}\`)">
               ✏️ Editar
             </button>
           </td>
-        </tr>
-      `).join('');
+        </tr>`;
+      }).join('');
+      
+      tabla.innerHTML = filasHTML;
+      console.log('✅ Tabla de tasas actualizada correctamente');
+      
+    } else {
+      console.warn('⚠️ Estructura de datos inesperada:', data);
+      tabla.innerHTML = `
+        <tr>
+          <td colspan="5" class="text-center text-warning">
+            Estructura de datos inesperada
+            <br><small>${JSON.stringify(data).substring(0, 100)}...</small>
+          </td>
+        </tr>`;
     }
+    
   } catch (error) {
-    console.error('Error cargando configuración de tasas:', error);
-    document.getElementById('tablaConfigTasas').innerHTML = 
-      '<tr><td colspan="5" class="text-center text-danger">Error cargando configuración</td></tr>';
+    console.error('❌ Error cargando configuración de tasas:', error);
+    const tabla = document.getElementById('tablaConfigTasas');
+    if (tabla) {
+      tabla.innerHTML = `
+        <tr>
+          <td colspan="5" class="text-center text-danger">
+            Error cargando configuración: ${error.message}
+          </td>
+        </tr>`;
+    }
   }
 }
 
-// Función para editar tasa
+// Función para editar tasa (CORREGIDA)
 function editarTasa(tipo, valorActual, descripcion) {
-  const nuevoValor = prompt(`Editar ${tipo.replace(/_/g, ' ').toUpperCase()}\n\nDescripción: ${descripcion}\nValor actual: ${valorActual}\n\nIngresa el nuevo valor:`, valorActual);
+  const tipoMostrar = tipo.replace(/_/g, ' ').toUpperCase();
+  const nuevoValor = prompt(
+    `Editar ${tipoMostrar}\n\n` +
+    `Descripción: ${descripcion}\n` +
+    `Valor actual: ${valorActual}\n\n` +
+    `Ingresa el nuevo valor:`,
+    valorActual
+  );
   
   if (nuevoValor === null) return; // Usuario canceló
   
@@ -346,9 +399,10 @@ function editarTasa(tipo, valorActual, descripcion) {
   actualizarTasa(tipo, valorNumerico);
 }
 
-// Función para actualizar tasa en el servidor
+// Función para actualizar tasa en el servidor (CORREGIDA)
 async function actualizarTasa(tipo, nuevoValor) {
   try {
+    console.log(`🔄 Actualizando tasa ${tipo} a ${nuevoValor}`);
     const API_BASE_URL = window.location.origin;
     const response = await fetch(`${API_BASE_URL}/api/actualizar-tasa`, {
       method: 'POST',
@@ -361,20 +415,28 @@ async function actualizarTasa(tipo, nuevoValor) {
       })
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success) {
-        alert('✅ Tasa actualizada correctamente');
-        cargarConfigTasas(); // Recargar la tabla
-      } else {
-        alert('❌ Error: ' + data.error);
-      }
+    console.log('📊 Respuesta status:', response.status);
+    
+    const text = await response.text();
+    console.log('📦 Respuesta raw:', text);
+    
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      console.error('❌ Error parseando JSON:', parseError);
+      throw new Error('Respuesta no es JSON: ' + text.substring(0, 100));
+    }
+
+    if (data.success) {
+      alert('✅ Tasa actualizada correctamente');
+      cargarConfigTasas(); // Recargar la tabla
     } else {
-      throw new Error(`Error ${response.status}`);
+      alert('❌ Error: ' + data.error);
     }
   } catch (error) {
-    console.error('Error actualizando tasa:', error);
-    alert('❌ Error al actualizar la tasa');
+    console.error('❌ Error actualizando tasa:', error);
+    alert('❌ Error al actualizar la tasa: ' + error.message);
   }
 }
 
@@ -386,6 +448,8 @@ function getBadgeClassRecarga(estado) {
   }
 }
 
+// Auto-refresh cada 30 segundos
 setInterval(() => {
+  console.log('🔄 Auto-refresh del panel admin...');
   cargarPanelAdmin();
 }, 30000);
