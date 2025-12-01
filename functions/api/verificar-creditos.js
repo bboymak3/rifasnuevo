@@ -1,6 +1,8 @@
 ﻿export async function onRequest(context) {
   const { request, env } = context;
   
+  console.log('=== VERIFICAR CRÉDITOS ===');
+  
   try {
     if (request.method !== 'POST') {
       return new Response(JSON.stringify({ success: false, error: 'Método no permitido' }), {
@@ -23,9 +25,9 @@
 
     const db = env.DB;
     
-    // Verificar créditos del usuario
+    // 1. Verificar usuario
     const usuario = await db.prepare(
-      'SELECT creditos FROM usuarios WHERE id = ?'
+      'SELECT id, nombre, telefono, email, creditos FROM usuarios WHERE id = ?'
     ).bind(userId).first();
 
     if (!usuario) {
@@ -38,18 +40,36 @@
       });
     }
 
-    // Obtener precio de ticket en créditos
+    // 2. Obtener precio de ticket
     const tasa = await db.prepare(
       'SELECT valor FROM config_tasas WHERE tipo = ?'
     ).bind('rifa_ticket').first();
 
-    const precioCredito = tasa ? tasa.valor : 100; // 100 créditos por ticket por defecto
+    const precioPorTicket = tasa ? tasa.valor : 100;
+    
+    // 3. Obtener tasa de conversión Bs/Créditos
+    const tasaBs = await db.prepare(
+      'SELECT valor FROM config_tasas WHERE tipo = ?'
+    ).bind('bs_creditos').first();
+    
+    const valorBsPor100Creditos = tasaBs ? tasaBs.valor : 250;
 
     return new Response(JSON.stringify({
       success: true,
       data: {
-        creditosDisponibles: usuario.creditos,
-        precioPorTicket: precioCredito
+        usuario: {
+          id: usuario.id,
+          nombre: usuario.nombre,
+          telefono: usuario.telefono,
+          email: usuario.email,
+          creditos: usuario.creditos
+        },
+        precios: {
+          precioPorTicket: precioPorTicket,
+          valorBsPor100Creditos: valorBsPor100Creditos,
+          ticketEnBs: (precioPorTicket * valorBsPor100Creditos) / 100
+        },
+        mensaje: `Tienes ${usuario.creditos} créditos disponibles. Cada ticket cuesta ${precioPorTicket} créditos.`
       }
     }), {
       headers: { 
