@@ -1,4 +1,4 @@
-export async function onRequest(context) {
+﻿export async function onRequest(context) {
   const { request, env } = context;
   
   try {
@@ -9,12 +9,15 @@ export async function onRequest(context) {
       });
     }
 
-    const { email, password } = await request.json();
+    const { email, telefono, password } = await request.json();
     
-    if (!email || !password) {
+    // Aceptar email O teléfono
+    const loginId = email || telefono;
+    
+    if (!loginId || !password) {
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Faltan campos: email y password' 
+        error: 'Faltan credenciales' 
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
@@ -23,11 +26,11 @@ export async function onRequest(context) {
 
     const db = env.DB;
     
-    // Buscar usuario
+    // Buscar usuario por email o teléfono
     const usuario = await db.prepare(`
       SELECT id, nombre, email, telefono, password_hash, creditos 
-      FROM usuarios WHERE email = ?
-    `).get(email);
+      FROM usuarios WHERE email = ? OR telefono = ?
+    `).get(loginId, loginId);
 
     if (!usuario) {
       return new Response(JSON.stringify({ 
@@ -39,7 +42,7 @@ export async function onRequest(context) {
       });
     }
 
-    // Verificar contraseña (en producción usar bcrypt.compare)
+    // Verificar contraseña (considera usar bcrypt en producción)
     if (usuario.password_hash !== password) {
       return new Response(JSON.stringify({ 
         success: false, 

@@ -1,0 +1,141 @@
+﻿<!-- login.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .error {
+            color: red;
+            background: #ffe6e6;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Iniciar Sesión</h1>
+    
+    <div id="error-message" class="error"></div>
+    
+    <form id="login-form">
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Contraseña:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        
+        <button type="submit">Iniciar Sesión</button>
+    </form>
+    
+    <p style="text-align: center; margin-top: 20px;">
+        ¿No tienes cuenta? <a href="registro.html">Regístrate</a>
+    </p>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error-message');
+            
+            // Limpiar mensaje de error
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+            
+            if (!email || !password) {
+                showError('Por favor ingresa email y contraseña');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Guardar datos del usuario en localStorage
+                    localStorage.setItem('userId', data.data.id);
+                    localStorage.setItem('nombre', data.data.nombre);
+                    localStorage.setItem('email', data.data.email);
+                    localStorage.setItem('telefono', data.data.telefono);
+                    localStorage.setItem('creditos', data.data.creditos);
+                    
+                    // Redirigir a la página principal
+                    window.location.href = 'index.html';
+                } else {
+                    showError(data.error || 'Credenciales incorrectas');
+                }
+                
+            } catch (error) {
+                console.error('Error en login:', error);
+                showError('Error de conexión. Intenta de nuevo.');
+            }
+        });
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        // Verificar si ya está logueado
+        window.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('userId')) {
+                // Ya está logueado, redirigir
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+</html>
