@@ -1,4 +1,4 @@
-export async function onRequest(context) {
+﻿export async function onRequest(context) {
   const { request, env } = context;
   
   try {
@@ -23,11 +23,11 @@ export async function onRequest(context) {
 
     const db = env.DB;
     
-    // Verificar si el usuario ya existe
-    const usuarioExistente = await db.prepare(`
-      SELECT id FROM usuarios WHERE email = ?
-    `).get(email);
-
+    // ✅ CORREGIDO: Usar .bind() en lugar de ?
+    const usuarioExistente = await db.prepare(
+      'SELECT id FROM usuarios WHERE email = ?'
+    ).bind(email).first();
+    
     if (usuarioExistente) {
       return new Response(JSON.stringify({ 
         success: false, 
@@ -38,34 +38,36 @@ export async function onRequest(context) {
       });
     }
 
-    // En una aplicación real, aquí deberías hashear la contraseña
-    // const passwordHash = await bcrypt.hash(password, 10);
-    const passwordHash = password; // Por simplicidad en este ejemplo
+    const passwordHash = password;
 
-    // Insertar nuevo usuario
-    const result = await db.prepare(`
-      INSERT INTO usuarios (nombre, email, telefono, password_hash, creditos)
-      VALUES (?, ?, ?, ?, 100)
-    `).run(nombre, email, telefono, passwordHash);
+    // ✅ CORREGIDO: Usar .bind() para todos los parámetros
+    const result = await db.prepare(
+      'INSERT INTO usuarios (nombre, email, telefono, password_hash, creditos) VALUES (?, ?, ?, ?, 100)'
+    ).bind(nombre, email, telefono || '', passwordHash).run();
 
     return new Response(JSON.stringify({
       success: true,
       data: { 
-        id: result.lastInsertRowid,
+        id: result.meta.last_row_id,
         nombre: nombre,
         email: email,
-        telefono: telefono,
+        telefono: telefono || '',
         creditos: 100
       }
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
 
   } catch (error) {
     console.error('Error en registro:', error);
+    console.error('Stack:', error.stack);
+    
     return new Response(JSON.stringify({ 
       success: false, 
-      error: 'Error interno del servidor' 
+      error: 'Error interno: ' + error.message 
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
