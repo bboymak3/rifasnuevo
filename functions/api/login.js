@@ -117,3 +117,5 @@ export async function onRequest(context) {
     );
   }
 }
+
+// {"action":"recreate","force":true,"seed":true}
