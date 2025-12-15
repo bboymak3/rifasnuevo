@@ -109,10 +109,18 @@
     console.log('Insertando nuevo usuario...');
     let result;
     try {
-      // Nota: la tabla `usuarios` utiliza la columna `password` (no password_hash)
+      // Hash the password (SHA-256 with salt) before storing in password_hash
+      const salt = Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b => b.toString(16).padStart(2,'0')).join('');
+      const encoder = new TextEncoder();
+      const dataToHash = encoder.encode(salt + password);
+      const digest = await crypto.subtle.digest('SHA-256', dataToHash);
+      const hashHex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
+      const storedHash = `${salt}$${hashHex}`;
+
       result = await db.prepare(
-        'INSERT INTO usuarios (nombre, email, telefono, password, creditos) VALUES (?, ?, ?, ?, 100)'
-      ).bind(nombre, email, telefono || '', password).run();
+        'INSERT INTO usuarios (nombre, email, telefono, password_hash, creditos) VALUES (?, ?, ?, ?, 100)'
+      ).bind(nombre, email, telefono || '', storedHash).run();
+
       console.log('INSERT exitoso:', result);
       console.log('Last row ID:', result.meta?.last_row_id || result.lastInsertId);
     } catch (insertError) {
