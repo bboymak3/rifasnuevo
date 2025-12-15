@@ -143,40 +143,32 @@
       console.log('INSERT exitoso:', result);
       console.log('Last row ID:', result.meta?.last_row_id || result.lastInsertId);
     } catch (insertError) {
-      console.log('ERROR en INSERT:', insertError.message);
-      console.log('Stack:', insertError.stack);
+      console.log('ERROR en INSERT:', insertError && insertError.message ? insertError.message : insertError);
+      console.log('Full insertError:', insertError);
 
-      // Fallback: si el error fue por NOT NULL en `password`, intentar un INSERT que incluya la columna
-      if (insertError && insertError.message && insertError.message.includes('NOT NULL')) {
-        try {
-          console.log('Intentando fallback incluyendo `password` en INSERT...');
-          const salt = Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b => b.toString(16).padStart(2,'0')).join('');
-          const encoder = new TextEncoder();
-          const dataToHash = encoder.encode(salt + password);
-          const digest = await crypto.subtle.digest('SHA-256', dataToHash);
-          const hashHex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
-          const storedHash = `${salt}$${hashHex}`;
+      // Intentar un fallback una vez para cubrir casos donde la columna `password` existe pero
+      // no podemos leer PRAGMA (p.ej. en ciertas instancias de D1). No depender únicamente de
+      // la presencia del texto 'NOT NULL' en el mensaje de error.
+      try {
+        console.log('Intentando fallback incluyendo `password` en INSERT (retry)...');
+        const salt2 = Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b => b.toString(16).padStart(2,'0')).join('');
+        const encoder2 = new TextEncoder();
+        const dataToHash2 = encoder2.encode(salt2 + password);
+        const digest2 = await crypto.subtle.digest('SHA-256', dataToHash2);
+        const hashHex2 = Array.from(new Uint8Array(digest2)).map(b => b.toString(16).padStart(2,'0')).join('');
+        const storedHash2 = `${salt2}$${hashHex2}`;
 
-          result = await db.prepare(
-            'INSERT INTO usuarios (nombre, email, telefono, password, password_hash, creditos) VALUES (?, ?, ?, ?, ?, 100)'
-          ).bind(nombre, email, telefono || '', storedHash, storedHash).run();
+        result = await db.prepare(
+          'INSERT INTO usuarios (nombre, email, telefono, password, password_hash, creditos) VALUES (?, ?, ?, ?, ?, 100)'
+        ).bind(nombre, email, telefono || '', storedHash2, storedHash2).run();
 
-          console.log('INSERT fallback exitoso:', result);
-        } catch (fallbackErr) {
-          console.log('ERROR en INSERT fallback:', fallbackErr.message);
-          console.log('Stack fallback:', fallbackErr.stack);
-          return new Response(JSON.stringify({ 
-            success: false, 
-            error: 'Error insertando usuario (fallback): ' + fallbackErr.message 
-          }), { 
-            status: 500, 
-            headers: { 'Content-Type': 'application/json' } 
-          });
-        }
-      } else {
+        console.log('INSERT fallback exitoso (retry):', result);
+      } catch (fallbackErr) {
+        console.log('ERROR en INSERT fallback (retry):', fallbackErr && fallbackErr.message ? fallbackErr.message : fallbackErr);
+        console.log('Full fallbackErr:', fallbackErr);
         return new Response(JSON.stringify({ 
           success: false, 
-          error: 'Error insertando usuario: ' + insertError.message 
+          error: 'Error insertando usuario (fallback): ' + (fallbackErr && fallbackErr.message ? fallbackErr.message : String(fallbackErr))
         }), { 
           status: 500, 
           headers: { 'Content-Type': 'application/json' } 
