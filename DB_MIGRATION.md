@@ -16,3 +16,15 @@ Notes:
 - The Node script uses salted SHA-256 and stores values as `salt$hexhash` in `password_hash`.
 - In production you should use a stronger KDF (pbkdf2, bcrypt, argon2). The code in `functions/api/*` uses Web Crypto to verify hashes.
 - If your DB is Cloudflare D1, run the SQL in the D1 console or use the D1 REST API to execute the migration.
+
+Local tests:
+
+- A test script `scripts/test-registro.mjs` was added to simulate registrations against a mocked D1 instance.
+   - It runs three scenarios: table with legacy `password` column, table without it, and a simulated PRAGMA failure that triggers the fallback insert.
+   - Run it locally with:
+
+```bash
+node scripts/test-registro.mjs
+```
+
+This script verifies that `functions/api/registro.js` handles both schemas and falls back safely when PRAGMA cannot be read.

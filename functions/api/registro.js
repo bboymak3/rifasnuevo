@@ -117,22 +117,71 @@
       const hashHex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
       const storedHash = `${salt}$${hashHex}`;
 
-      result = await db.prepare(
-        'INSERT INTO usuarios (nombre, email, telefono, password_hash, creditos) VALUES (?, ?, ?, ?, 100)'
-      ).bind(nombre, email, telefono || '', storedHash).run();
+      // Detectar si la columna legacy `password` existe (y posiblemente es NOT NULL)
+      let hasPasswordCol = false;
+      try {
+        const pragma = await db.prepare("PRAGMA table_info('usuarios')").all();
+        if (Array.isArray(pragma)) {
+          hasPasswordCol = pragma.some(col => col && col.name === 'password');
+        }
+        console.log('PRAGMA table_info usuarios:', pragma, 'hasPasswordCol=', hasPasswordCol);
+      } catch (pErr) {
+        console.log('No se pudo leer PRAGMA table_info:', pErr.message);
+      }
+
+      if (hasPasswordCol) {
+        // Incluir la columna `password` para satisfacer posibles NOT NULL constraints.
+        result = await db.prepare(
+          'INSERT INTO usuarios (nombre, email, telefono, password, password_hash, creditos) VALUES (?, ?, ?, ?, ?, 100)'
+        ).bind(nombre, email, telefono || '', storedHash, storedHash).run();
+      } else {
+        result = await db.prepare(
+          'INSERT INTO usuarios (nombre, email, telefono, password_hash, creditos) VALUES (?, ?, ?, ?, 100)'
+        ).bind(nombre, email, telefono || '', storedHash).run();
+      }
 
       console.log('INSERT exitoso:', result);
       console.log('Last row ID:', result.meta?.last_row_id || result.lastInsertId);
     } catch (insertError) {
       console.log('ERROR en INSERT:', insertError.message);
       console.log('Stack:', insertError.stack);
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Error insertando usuario: ' + insertError.message 
-      }), { 
-        status: 500, 
-        headers: { 'Content-Type': 'application/json' } 
-      });
+
+      // Fallback: si el error fue por NOT NULL en `password`, intentar un INSERT que incluya la columna
+      if (insertError && insertError.message && insertError.message.includes('NOT NULL')) {
+        try {
+          console.log('Intentando fallback incluyendo `password` en INSERT...');
+          const salt = Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b => b.toString(16).padStart(2,'0')).join('');
+          const encoder = new TextEncoder();
+          const dataToHash = encoder.encode(salt + password);
+          const digest = await crypto.subtle.digest('SHA-256', dataToHash);
+          const hashHex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
+          const storedHash = `${salt}$${hashHex}`;
+
+          result = await db.prepare(
+            'INSERT INTO usuarios (nombre, email, telefono, password, password_hash, creditos) VALUES (?, ?, ?, ?, ?, 100)'
+          ).bind(nombre, email, telefono || '', storedHash, storedHash).run();
+
+          console.log('INSERT fallback exitoso:', result);
+        } catch (fallbackErr) {
+          console.log('ERROR en INSERT fallback:', fallbackErr.message);
+          console.log('Stack fallback:', fallbackErr.stack);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'Error insertando usuario (fallback): ' + fallbackErr.message 
+          }), { 
+            status: 500, 
+            headers: { 'Content-Type': 'application/json' } 
+          });
+        }
+      } else {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'Error insertando usuario: ' + insertError.message 
+        }), { 
+          status: 500, 
+          headers: { 'Content-Type': 'application/json' } 
+        });
+      }
     }
 
     // 8. Éxito
