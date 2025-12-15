@@ -1095,18 +1095,19 @@
                 console.log('📨 Respuesta de recarga:', data);
                 
                 if (response.ok && data.success) {
-                    // Actualizar créditos del usuario en localStorage
-                    usuario.creditos = data.nuevos_creditos || 
-                        ((usuario.creditos || 0) + recargaData.creditos_solicitados);
-                    localStorage.setItem('user', JSON.stringify(usuario));
-                    
-                    // Mostrar mensaje de éxito
+                    // Solo actualizar créditos localmente si la recarga fue aprobada
+                    if ((data.estado === 'aprobado' || data.estado === 'aprobada') && typeof data.nuevos_creditos === 'number') {
+                        usuario.creditos = data.nuevos_creditos;
+                        localStorage.setItem('user', JSON.stringify(usuario));
+                    }
+
+                    // Mostrar mensaje de éxito (pendiente de verificación si aplica)
                     mostrarExito(
                         `✅ ¡Solicitud de recarga enviada!\n\n` +
                         `Créditos solicitados: ${recargaData.creditos_solicitados}\n` +
                         `Monto: $${paqueteSeleccionado.precio.toFixed(2)}\n` +
                         `Estado: ${data.estado || 'pendiente'}\n\n` +
-                        `Tu saldo se actualizará una vez verificado el pago.`
+                        ((data.estado === 'aprobado' || data.estado === 'aprobada') ? 'Tu saldo se ha actualizado correctamente.' : 'La recarga está pendiente de verificación por el administrador.')
                     );
                     
                     // Actualizar interfaz

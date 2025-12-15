@@ -22,18 +22,24 @@ document.addEventListener('DOMContentLoaded', function() {
       <span class="badge bg-primary">💰 ${estadoApp.usuario.creditos} créditos</span>
     `;
   } else {
-    // Redirigir al login si no está logueado
-    window.location.href = 'login.html';
-    return;
+    // Usuario no autenticado: permitimos ver y seleccionar tickets, pero no comprar.
+    estadoApp.usuario = null;
+    document.getElementById('userInfo').innerHTML = `
+      <a href="login.html" class="btn btn-sm btn-outline-primary">Iniciar Sesión</a>
+      <a href="registro.html" class="btn btn-sm btn-outline-secondary" style="margin-left:8px;">Registrarse</a>
+    `;
   }
   
   cargarEstadisticas();
   cargarTicketsDisponibles();
   
   // Configurar eventos
-  document.getElementById('btnPagar').addEventListener('click', procederPago);
-  document.getElementById('btnLimpiar').addEventListener('click', limpiarSeleccion);
-  document.getElementById('btnLogout').addEventListener('click', logout);
+  const btnPagar = document.getElementById('btnPagar');
+  const btnLimpiar = document.getElementById('btnLimpiar');
+  const btnLogout = document.getElementById('btnLogout');
+  if (btnPagar) btnPagar.addEventListener('click', procederPago);
+  if (btnLimpiar) btnLimpiar.addEventListener('click', limpiarSeleccion);
+  if (btnLogout) btnLogout.addEventListener('click', logout);
 });
 
 async function cargarEstadisticas() {
@@ -167,6 +173,13 @@ function limpiarSeleccion() {
 function procederPago() {
   if (estadoApp.ticketsSeleccionados.length === 0) {
     alert('⚠️ Selecciona al menos un ticket');
+    return;
+  }
+
+  if (!estadoApp.usuario) {
+    if (confirm('Debes iniciar sesión para comprar tickets. ¿Deseas ir al login ahora?')) {
+      window.location.href = 'login.html';
+    }
     return;
   }
 

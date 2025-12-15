@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Registro - Sistema de Rifas</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .box { background: white; padding: 30px; border-radius: 12px; width: 100%; max-width: 420px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; }
+        button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: bold; cursor: pointer; }
+        .link { text-align: center; margin-top: 12px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2 style="text-align:center">📝 Registro</h2>
+        <div id="msg" style="display:none;padding:10px;border-radius:6px;margin-bottom:10px"></div>
+        <input id="nombre" placeholder="Nombre completo" />
+        <input id="email" placeholder="Email" type="email" />
+        <input id="telefono" placeholder="Teléfono (opcional)" />
+        <input id="password" placeholder="Contraseña" type="password" />
+        <button onclick="registrar()" id="btnReg">Crear cuenta</button>
+        <div class="link">¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></div>
+    </div>
+
+    <script>
+        function showMsg(text, type='error'){
+            const el = document.getElementById('msg');
+            el.style.display = 'block';
+            el.style.background = type === 'error' ? '#ffebee' : '#e8f5e9';
+            el.style.color = type === 'error' ? '#c62828' : '#2e7d32';
+            el.textContent = text;
+            if(type === 'error') setTimeout(()=> el.style.display='none',5000);
+        }
+
+        async function registrar(){
+            const nombre = document.getElementById('nombre').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const telefono = document.getElementById('telefono').value.trim();
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('btnReg');
+
+            if(!nombre||!email||!password){ showMsg('Completa nombre, email y contraseña'); return; }
+
+            btn.disabled = true; btn.textContent = 'Registrando...';
+            try{
+                const res = await fetch('/api/registro', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ nombre, email, telefono, password }) });
+                const data = await res.json();
+                if(res.ok && data.success){
+                    showMsg('Registro exitoso. Redirigiendo a login...', 'success');
+                    setTimeout(()=> window.location.href='login.html', 1200);
+                } else {
+                    showMsg(data.error || 'Error en registro');
+                    btn.disabled = false; btn.textContent = 'Crear cuenta';
+                }
+            }catch(e){ showMsg('Error de conexión: '+e.message); btn.disabled=false; btn.textContent='Crear cuenta'; }
+        }
+    </script>
+</body>
+</html>

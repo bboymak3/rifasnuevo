@@ -1,4 +1,4 @@
-// functions/api/tickets-disponibles.js - VERSIÓN CORREGIDA
+// functions/api/tickets-disponibles.js - VERSIï¿½N CORREGIDA
 export async function onRequest(context) {
   // Configurar CORS
   const corsHeaders = {
@@ -17,7 +17,7 @@ export async function onRequest(context) {
     return new Response(
       JSON.stringify({
         success: false,
-        error: 'Método no permitido'
+        error: 'Mï¿½todo no permitido'
       }),
       {
         status: 405,
@@ -39,7 +39,13 @@ export async function onRequest(context) {
       ORDER BY CAST(numero AS INTEGER) ASC
     `).all();
 
-    const ticketsDisponibles = ticketsQuery.results.map(t => parseInt(t.numero));
+    let ticketsDisponibles = [];
+    if (!ticketsQuery.results || ticketsQuery.results.length === 0) {
+      console.warn('âš ï¸ No se encontraron filas en la tabla tickets. Devolviendo rango 1-100 como disponibles por defecto.');
+      ticketsDisponibles = Array.from({length:100}, (_,i) => i+1);
+    } else {
+      ticketsDisponibles = ticketsQuery.results.map(t => parseInt(t.numero));
+    }
     
     console.log(`? ${ticketsDisponibles.length} tickets disponibles encontrados`);
 

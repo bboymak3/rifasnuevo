@@ -72,11 +72,28 @@
       console.log(`💰 Aprobando créditos: ${recarga.monto} Bs → ${creditosAprobados} créditos (tasa: ${tasaBsCreditos} Bs/100cr)`);
 
       // 3. Sumar créditos al usuario
-      await db.prepare(
-        'UPDATE usuarios SET creditos = creditos + ? WHERE id = ?'
-      ).bind(creditosAprobados, recarga.usuario_id).run();
-      
-      console.log(`✅ Créditos sumados al usuario ${recarga.usuario_id}`);
+        try {
+          const updateRes = await db.prepare(
+            'UPDATE usuarios SET creditos = creditos + ? WHERE id = ?'
+          ).bind(creditosAprobados, recarga.usuario_id).run();
+
+          // Algunas drivers devuelven meta, otras no; intentaremos verificar que se actualizó
+          console.log('Resultado UPDATE usuarios:', updateRes);
+
+          // Obtener nuevo saldo del usuario
+          const usuarioActualizado = await db.prepare('SELECT id, creditos FROM usuarios WHERE id = ?').bind(recarga.usuario_id).first();
+          if (!usuarioActualizado) {
+            throw new Error('No se pudo obtener el usuario después de actualizar los créditos');
+          }
+
+          console.log(`✅ Créditos sumados al usuario ${recarga.usuario_id}. Nuevo saldo: ${usuarioActualizado.creditos}`);
+          // Reemplazar creditosAprobados por el valor real en la respuesta si hace falta
+          recarga.creditosAprobados = creditosAprobados;
+          recarga.usuario_creditos_nuevo = usuarioActualizado.creditos;
+        } catch (err) {
+          console.error('Error actualizando créditos del usuario:', err);
+          return new Response(JSON.stringify({ success: false, error: 'Error actualizando créditos del usuario: ' + err.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+        }
     }
 
     // 4. Actualizar estado de la recarga
@@ -92,7 +109,8 @@
       data: {
         recargaId: recargaId,
         nuevoEstado: accion,
-        creditosAprobados: accion === 'aprobada' ? Math.floor((recarga.monto * 100) / (tasa?.valor || 250)) : 0
+        creditosAprobados: accion === 'aprobada' ? recarga.creditosAprobados || Math.floor((recarga.monto * 100) / (tasa?.valor || 250)) : 0,
+        nuevosCreditosUsuario: recarga.usuario_creditos_nuevo || null
       }
     }), {
       headers: { 

@@ -107,21 +107,22 @@
                 userData: userDataStr ? JSON.parse(userDataStr) : null
             });
             
-            // Si NO está logueado, redirigir AL LOGIN
+            // Si NO está logueado, mostramos una vista pública con opciones para
+            // iniciar sesión o registrarse (no redirigimos automáticamente)
             if (isLoggedIn !== 'true' || !userDataStr) {
-                console.log('❌ NO está logueado, redirigiendo a login.html');
-                window.location.href = 'login.html';
+                console.log('ℹ️ Usuario no autenticado, mostrando vista pública');
+                mostrarPaginaPublica();
                 return;
             }
-            
+
             try {
                 // Parsear datos del usuario
                 const userData = JSON.parse(userDataStr);
                 console.log('✅ Usuario autenticado:', userData);
-                
-                // Mostrar la página principal
+
+                // Mostrar la página principal para usuarios logueados
                 mostrarPaginaPrincipal(userData);
-                
+
             } catch (error) {
                 console.error('💥 Error parseando datos:', error);
                 mostrarError('Error cargando datos del usuario. Por favor, inicia sesión nuevamente.');
@@ -133,6 +134,23 @@
                 }, 3000);
             }
         });
+        
+        function mostrarPaginaPublica(){
+            document.getElementById('userInfo').innerHTML = `
+                <div style="display:flex;gap:12px;align-items:center">
+                    <a href="login.html" class="btn" style="background:transparent;color:#667eea;padding:8px 12px;border:1px solid #667eea;border-radius:8px;">Iniciar Sesión</a>
+                    <a href="registro.html" class="btn" style="background:transparent;color:#667eea;padding:8px 12px;border:1px solid #667eea;border-radius:8px;">Regístrate</a>
+                </div>
+            `;
+
+            document.getElementById('content').innerHTML = `
+                <div class="welcome-card">
+                    <h1 style="color: #333; margin-bottom: 10px;">🎉 Bienvenido a Rifas</h1>
+                    <p style="color: #666; font-size: 18px; max-width: 600px; margin: 0 auto 25px auto;">Inicia sesión o regístrate para comprar tickets y participar en nuestras rifas.</p>
+                    <a href="comprar-tickets.html" class="btn">Ver Tickets</a>
+                </div>
+            `;
+        }
         
         function mostrarPaginaPrincipal(userData) {
             // 1. Mostrar información del usuario en el navbar
@@ -197,6 +215,14 @@
                         <p>Consulta las estadísticas de las rifas en tiempo real.</p>
                         <a href="estadisticas.html" class="btn">
                             Ver Estadísticas
+                        </a>
+                    </div>
+
+                    <div class="card">
+                        <h3>🎮 Juego - Dados</h3>
+                        <p>Juega y prueba tu suerte en el juego de dados.</p>
+                        <a href="juego-dados.html" class="btn">
+                            Ir al Juego
                         </a>
                     </div>
                 </div>

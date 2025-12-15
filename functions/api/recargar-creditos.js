@@ -120,58 +120,18 @@ export async function onRequest(context) {
         )
         .run();
 
-      console.log('✅ Recarga registrada con ID:', recargaResult.lastInsertId);
-      
-      // En un sistema real, aquí enviaríamos notificación al administrador
-      // y procesaríamos el pago. Por ahora, simulamos aprobación automática.
-      
-      // 3. Aprobar automáticamente (para desarrollo)
-      // En producción, esto debería hacerse manualmente después de verificar el pago
-      await db
-        .prepare(`
-          UPDATE recargas 
-          SET estado = 'aprobado', fecha_procesado = ?, administrador_id = 1
-          WHERE id = ?
-        `)
-        .bind(fecha, recargaResult.lastInsertId)
-        .run();
-
-      // 4. Añadir créditos al usuario
-      const nuevosCreditos = usuario.creditos + creditos_solicitados;
-      
-      await db
-        .prepare('UPDATE usuarios SET creditos = ? WHERE id = ?')
-        .bind(nuevosCreditos, usuario_id)
-        .run();
-
-      // 5. Registrar en el historial (opcional)
-      await db
-        .prepare(`
-          INSERT INTO historial_dados (
-            usuario_id, apuesta, resultado, creditos_ganados,
-            creditos_anteriores, creditos_nuevos, fecha_juego
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `)
-        .bind(
-          usuario_id,
-          0, // No es una apuesta
-          'recarga_creditos',
-          creditos_solicitados,
-          usuario.creditos,
-          nuevosCreditos,
-          fecha
-        )
-        .run();
+      // Normalmente devolveremos la recarga como PENDIENTE para que un
+      // administrador la verifique manualmente antes de aprobarla.
+      const recargaId = recargaResult?.meta?.last_row_id || recargaResult?.lastInsertId || null;
+      console.log('✅ Recarga registrada con ID:', recargaId);
 
       return new Response(
         JSON.stringify({
           success: true,
-          message: 'Recarga procesada exitosamente',
-          recarga_id: recargaResult.lastInsertId,
-          nuevos_creditos: nuevosCreditos,
-          creditos_agregados: creditos_solicitados,
-          estado: 'aprobado',
+          message: 'Recarga registrada y pendiente de verificación por el administrador',
+          recarga_id: recargaId,
+          creditos_solicitados: creditos_solicitados,
+          estado: 'pendiente',
           referencia: referencia,
           fecha: fecha
         }),
