@@ -77,3 +77,16 @@ CREATE TABLE IF NOT EXISTS settings (
 -- Default settings
 INSERT OR IGNORE INTO settings (key, value) VALUES ('precio_ticket', '499');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('puntos_por_bs', '1');
+
+-- Config tasas table (used by admin panel and purchase flows)
+CREATE TABLE IF NOT EXISTS config_tasas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tipo TEXT UNIQUE NOT NULL,
+  descripcion TEXT,
+  valor REAL NOT NULL,
+  fecha_actualizacion TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT OR IGNORE INTO config_tasas (tipo, descripcion, valor) VALUES ('rifa_ticket', 'Créditos necesarios por ticket', 100);
+INSERT OR IGNORE INTO config_tasas (tipo, descripcion, valor) VALUES ('puntos_por_bs', 'Puntos por Bs recargado', 1);
+INSERT OR IGNORE INTO config_tasas (tipo, descripcion, valor) VALUES ('dice_rate', 'Multiplicador del juego de dados', 2);
