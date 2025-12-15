@@ -533,3 +533,59 @@ async function sembrarTickets() {
     alert('❌ Error al sembrar tickets: ' + err.message);
   }
 }
+
+// Admin: Backup DB
+async function backupDB() {
+  if (!confirm('Descargar backup JSON de tablas (usuarios, recargas, tickets, ventas)?')) return;
+  const token = prompt('Ingresa ADMIN_TOKEN (secreto)');
+  if (!token) return alert('Se requiere ADMIN_TOKEN');
+
+  try {
+    const API_BASE_URL = window.location.origin;
+    const res = await fetch(`${API_BASE_URL}/api/admin/backup`, {
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!data.success) return alert('Error: ' + (data.error || 'Desconocido'));
+
+    // Trigger download
+    const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `backup_db_${new Date().toISOString()}.json`; a.click();
+    URL.revokeObjectURL(url);
+    alert('Backup descargado');
+  } catch (err) {
+    console.error('Error backupDB:', err);
+    alert('Error generando backup: ' + err.message);
+  }
+}
+
+// Admin: Recreate DB (wipe)
+async function recrearDB() {
+  if (!confirm('Esto BORRARÁ los datos actuales y recreará el esquema. ¿Continuar?')) return;
+  const token = prompt('Ingresa ADMIN_TOKEN (secreto)');
+  if (!token) return alert('Se requiere ADMIN_TOKEN');
+  const force = confirm('¿Forzar borrado incluso si ya existe esquema? (force=true)');
+
+  try {
+    const API_BASE_URL = window.location.origin;
+    const res = await fetch(`${API_BASE_URL}/api/admin/migrate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ action: 'recreate', force: force, seed: true })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert('Recreación completada: ' + (data.message || 'OK'));
+      cargarPanelAdmin();
+    } else {
+      alert('Error: ' + (data.error || 'Desconocido'));
+      console.error('RecrearDB failed:', data);
+    }
+  } catch (err) {
+    console.error('Error recrearDB:', err);
+    alert('Error: ' + err.message);
+  }
+}
