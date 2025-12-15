@@ -54,13 +54,17 @@ function createMockDB({ hasPasswordCol = false, pragmaThrows = false } = {}) {
         async run() {
           // Simulate INSERT INTO usuarios ...
           if (/INSERT\s+INTO\s+usuarios/i.test(sql)) {
-            // If hasPasswordCol is true but the INSERT SQL does NOT include 'password' column,
-            // simulate the NOT NULL constraint failure
-            const usedSql = sql.toLowerCase();
-            const includesPasswordColumn = usedSql.includes('password,') || usedSql.includes('password )') || usedSql.includes('password)');
-            if (hasPasswordCol && !includesPasswordColumn) {
-              throw new Error('D1_ERROR: NOT NULL constraint failed: usuarios.password');
-            }
+              // If the SQL includes 'password' but the DB doesn't have that column, simulate
+              // a 'no such column' error. If the DB *does* have the column but the SQL
+              // did NOT include 'password', simulate the NOT NULL constraint failure.
+              const usedSql = sql.toLowerCase();
+              const includesPasswordColumn = usedSql.includes('password,') || usedSql.includes('password )') || usedSql.includes('password)');
+              if (!hasPasswordCol && includesPasswordColumn) {
+                throw new Error('D1_ERROR: no such column: password');
+              }
+              if (hasPasswordCol && !includesPasswordColumn) {
+                throw new Error('D1_ERROR: NOT NULL constraint failed: usuarios.password');
+              }
 
             // Create the row using bind args. We guess columns order for our tests.
             // Our code binds in predictable order; we'll map by basic heuristics.

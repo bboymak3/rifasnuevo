@@ -117,27 +117,32 @@
       const hashHex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
       const storedHash = `${salt}$${hashHex}`;
 
-      // Detectar si la columna legacy `password` existe (y posiblemente es NOT NULL)
-      let hasPasswordCol = false;
-      try {
-        const pragma = await db.prepare("PRAGMA table_info('usuarios')").all();
-        if (Array.isArray(pragma)) {
-          hasPasswordCol = pragma.some(col => col && col.name === 'password');
-        }
-        console.log('PRAGMA table_info usuarios:', pragma, 'hasPasswordCol=', hasPasswordCol);
-      } catch (pErr) {
-        console.log('No se pudo leer PRAGMA table_info:', pErr.message);
-      }
+      // Try a robust insertion sequence that works regardless of whether the legacy
+      // `password` column exists or not. Some D1 instances may not report PRAGMA reliably,
+      // so we attempt an INSERT that includes `password` first (most compatible), and if
+      // the DB complains that the column doesn't exist, we retry without it.
 
-      if (hasPasswordCol) {
-        // Incluir la columna `password` para satisfacer posibles NOT NULL constraints.
-        result = await db.prepare(
-          'INSERT INTO usuarios (nombre, email, telefono, password, password_hash, creditos) VALUES (?, ?, ?, ?, ?, 100)'
-        ).bind(nombre, email, telefono || '', storedHash, storedHash).run();
-      } else {
-        result = await db.prepare(
-          'INSERT INTO usuarios (nombre, email, telefono, password_hash, creditos) VALUES (?, ?, ?, ?, 100)'
-        ).bind(nombre, email, telefono || '', storedHash).run();
+      const insertWithPasswordSql = 'INSERT INTO usuarios (nombre, email, telefono, password, password_hash, creditos) VALUES (?, ?, ?, ?, ?, 100)';
+      const insertWithoutPasswordSql = 'INSERT INTO usuarios (nombre, email, telefono, password_hash, creditos) VALUES (?, ?, ?, ?, 100)';
+
+      let triedWithout = false;
+      try {
+        console.log('Intentando INSERT incluyendo `password`...');
+        result = await db.prepare(insertWithPasswordSql).bind(nombre, email, telefono || '', storedHash, storedHash).run();
+        console.log('INSERT con password exitoso:', result);
+      } catch (firstErr) {
+        console.log('ERROR en primer INSERT (con password):', firstErr && firstErr.message ? firstErr.message : firstErr);
+        // If the error indicates the column doesn't exist, try without the column.
+        const msg = firstErr && firstErr.message ? firstErr.message.toLowerCase() : '';
+        if (msg.includes('no such column') || msg.includes('no such table') || msg.includes('unknown column')) {
+          console.log('La columna `password` parece no existir, intentando INSERT sin `password`...');
+          triedWithout = true;
+          result = await db.prepare(insertWithoutPasswordSql).bind(nombre, email, telefono || '', storedHash).run();
+          console.log('INSERT sin password exitoso:', result);
+        } else {
+          // Re-throw to be handled by outer catch/fallback logic
+          throw firstErr;
+        }
       }
 
       console.log('INSERT exitoso:', result);
@@ -147,10 +152,9 @@
       console.log('Full insertError:', insertError);
 
       // Intentar un fallback una vez para cubrir casos donde la columna `password` existe pero
-      // no podemos leer PRAGMA (p.ej. en ciertas instancias de D1). No depender únicamente de
-      // la presencia del texto 'NOT NULL' en el mensaje de error.
+      // no se pudo insertar inicialmente (por ejemplo, por condiciones extrañas en D1).
       try {
-        console.log('Intentando fallback incluyendo `password` en INSERT (retry)...');
+        console.log('Intentando fallback incluyendo `password` en INSERT (final retry)...');
         const salt2 = Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b => b.toString(16).padStart(2,'0')).join('');
         const encoder2 = new TextEncoder();
         const dataToHash2 = encoder2.encode(salt2 + password);
@@ -162,9 +166,9 @@
           'INSERT INTO usuarios (nombre, email, telefono, password, password_hash, creditos) VALUES (?, ?, ?, ?, ?, 100)'
         ).bind(nombre, email, telefono || '', storedHash2, storedHash2).run();
 
-        console.log('INSERT fallback exitoso (retry):', result);
+        console.log('INSERT fallback exitoso (final retry):', result);
       } catch (fallbackErr) {
-        console.log('ERROR en INSERT fallback (retry):', fallbackErr && fallbackErr.message ? fallbackErr.message : fallbackErr);
+        console.log('ERROR en INSERT fallback (final retry):', fallbackErr && fallbackErr.message ? fallbackErr.message : fallbackErr);
         console.log('Full fallbackErr:', fallbackErr);
         return new Response(JSON.stringify({ 
           success: false, 
