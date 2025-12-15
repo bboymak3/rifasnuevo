@@ -78,6 +78,9 @@ async function cargarTicketsDisponibles() {
     }
   } catch (error) {
     console.error('Error cargando tickets:', error);
+    // Fallback: mostrar rango 1..100 para que el usuario pueda seleccionar
+    estadoApp.ticketsDisponibles = Array.from({length:100}, (_,i) => i+1);
+    mostrarTicketsDisponibles();
   }
 }
 

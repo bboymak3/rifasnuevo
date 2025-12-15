@@ -193,6 +193,13 @@
                             Ir a Comprar
                         </a>
                     </div>
+                
+                    <div class="card">
+                        <h3>🎟️ Números disponibles</h3>
+                        <p>Vista rápida de algunos números disponibles — haz click para ver todos.</p>
+                        <div id="miniTicketGrid" style="margin-top:12px; display:flex; flex-wrap:wrap; max-width:420px;"></div>
+                        <div style="margin-top:10px;"><a href="comprar-tickets.html" class="btn">Ver todos los números</a></div>
+                    </div>
                     
                     <div class="card">
                         <h3>📋 Mis Tickets</h3>
@@ -275,6 +282,44 @@
         console.log('User Data:', JSON.parse(localStorage.getItem('user') || '{}'));
         console.log('URL Completa:', window.location.href);
         console.log('Timestamp:', new Date().toISOString());
+    </script>
+    <script>
+        // Mini ticket preview on index
+        async function cargarMiniTickets() {
+            const grid = document.getElementById('miniTicketGrid');
+            if (!grid) return;
+            grid.innerHTML = 'Cargando...';
+            try {
+                const res = await fetch('/api/tickets-disponibles');
+                if (!res.ok) throw new Error('HTTP '+res.status);
+                const data = await res.json();
+                const disponibles = data && data.disponibles && Array.isArray(data.disponibles) ? data.disponibles : [];
+                const list = (disponibles.length ? disponibles : Array.from({length:100}, (_,i)=>i+1)).slice(0,24);
+                grid.innerHTML = '';
+                list.forEach(n => {
+                    const el = document.createElement('div');
+                    el.textContent = n;
+                    el.style.cssText = 'width:40px;height:40px;line-height:40px;text-align:center;margin:3px;border-radius:6px;font-weight:bold;cursor:pointer;';
+                    el.className = 'ticket-number';
+                    el.title = 'Ver/seleccionar en Comprar Tickets';
+                    el.addEventListener('click', () => { window.location.href = `comprar-tickets.html?focus=${n}`; });
+                    grid.appendChild(el);
+                });
+            } catch (err) {
+                console.error('Error cargando mini tickets:', err);
+                grid.innerHTML = '';
+                const fallback = Array.from({length:24}, (_,i)=>i+1);
+                fallback.forEach(n => {
+                    const el = document.createElement('div');
+                    el.textContent = n;
+                    el.style.cssText = 'width:40px;height:40px;line-height:40px;text-align:center;margin:3px;border-radius:6px;font-weight:bold;cursor:pointer;background:#f0f0f0;';
+                    el.addEventListener('click', () => { window.location.href = `comprar-tickets.html?focus=${n}`; });
+                    grid.appendChild(el);
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', cargarMiniTickets);
     </script>
 </body>
 </html>

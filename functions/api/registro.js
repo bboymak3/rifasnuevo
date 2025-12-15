@@ -109,11 +109,12 @@
     console.log('Insertando nuevo usuario...');
     let result;
     try {
+      // Nota: la tabla `usuarios` utiliza la columna `password` (no password_hash)
       result = await db.prepare(
-        'INSERT INTO usuarios (nombre, email, telefono, password_hash, creditos) VALUES (?, ?, ?, ?, 100)'
+        'INSERT INTO usuarios (nombre, email, telefono, password, creditos) VALUES (?, ?, ?, ?, 100)'
       ).bind(nombre, email, telefono || '', password).run();
       console.log('INSERT exitoso:', result);
-      console.log('Last row ID:', result.meta?.last_row_id);
+      console.log('Last row ID:', result.meta?.last_row_id || result.lastInsertId);
     } catch (insertError) {
       console.log('ERROR en INSERT:', insertError.message);
       console.log('Stack:', insertError.stack);

@@ -513,3 +513,23 @@ setInterval(() => {
   console.log('🔄 Auto-refresh...');
   cargarPanelAdmin();
 }, 30000);
+
+// Función para sembrar tickets (1..100) desde el panel admin
+async function sembrarTickets() {
+  if (!confirm('¿Sembrar números de ticket del 1 al 100 en la base de datos? Esto solo insertará aquellos que no existan.')) return;
+  try {
+    const API_BASE_URL = window.location.origin;
+    const res = await fetch(`${API_BASE_URL}/api/seed-tickets`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      alert('✅ ' + (data.message || 'Tickets sembrados correctamente'));
+      cargarEstadisticas();
+      cargarTicketsVendidos();
+    } else {
+      alert('❌ Error: ' + (data.error || 'Desconocido'));
+    }
+  } catch (err) {
+    console.error('Error sembrando tickets:', err);
+    alert('❌ Error al sembrar tickets: ' + err.message);
+  }
+}
