@@ -1,0 +1,15 @@
+name = "rifa-puntos-prod"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "./public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rifasv2"
+database_id = "c9c7e308-6c71-49f9-8eff-7f80512d7dc0"
+
+[env.production]
+compatibility_date = "2024-01-01"
+
+[env.production.vars]
+JWT_SECRET = "tu_clave_secreta_jwt_cambiar_en_produccion"
+ADMIN_PASSWORD = "admin123" # Cambiar esto en producción
