@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Rifa 33</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="user-info" id="sidebarUserInfo">
+                    <h3>Cargando...</h3>
+                    <p class="user-role">Usuario</p>
+                </div>
+                <div class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <a href="dashboard.html" class="menu-item active">
+                    <i class="fas fa-home"></i>
+                    <span>Inicio</span>
+                </a>
+                <a href="tickets.html" class="menu-item">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Comprar Tickets</span>
+                </a>
+                <a href="recargas.html" class="menu-item">
+                    <i class="fas fa-coins"></i>
+                    <span>Recargar Puntos</span>
+                </a>
+                <a href="transferencias.html" class="menu-item">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transferencias</span>
+                </a>
+                <a href="historial.html" class="menu-item">
+                    <i class="fas fa-history"></i>
+                    <span>Historial</span>
+                </a>
+                <a href="perfil.html" class="menu-item">
+                    <i class="fas fa-user-cog"></i>
+                    <span>Mi Perfil</span>
+                </a>
+                
+                <div class="menu-divider"></div>
+                
+                <a href="admin.html" class="menu-item admin-item" id="adminLink">
+                    <i class="fas fa-crown"></i>
+                    <span>Panel Admin</span>
+                </a>
+                
+                <a href="#" class="menu-item logout-item" onclick="cerrarSesion()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="points-display" id="sidebarPoints">
+                    <i class="fas fa-coins"></i>
+                    <div>
+                        <span class="points-label">Tus Puntos</span>
+                        <span class="points-value">0</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <h1>Dashboard</h1>
+                    <p class="welcome-text" id="welcomeText">Bienvenido de vuelta</p>
+                </div>
+                <div class="top-bar-right">
+                    <div class="notification-bell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notificationCount">0</span>
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <div class="dropdown-trigger">
+                            <span id="userName">Cargando...</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="dropdown-menu">
+                            <a href="perfil.html"><i class="fas fa-user"></i> Mi Perfil</a>
+                            <a href="#"><i class="fas fa-cog"></i> Configuración</a>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" onclick="cerrarSesion()"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Stats Cards -->
+            <section class="stats-cards">
+                <div class="stat-card primary">
+                    <div class="stat-icon">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalPoints">0</h3>
+                        <p>Puntos Totales</p>
+                    </div>
+                    <a href="recargas.html" class="stat-action">
+                        <i class="fas fa-plus"></i> Recargar
+                    </a>
+                </div>
+                
+                <div class="stat-card success">
+                    <div class="stat-icon">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalTickets">0</h3>
+                        <p>Tickets Comprados</p>
+                    </div>
+                    <a href="tickets.html" class="stat-action">
+                        <i class="fas fa-shopping-cart"></i> Comprar
+                    </a>
+                </div>
+                
+                <div class="stat-card warning">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="availableTickets">100</h3>
+                        <p>Tickets Disponibles</p>
+                    </div>
+                    <a href="tickets.html" class="stat-action">
+                        <i class="fas fa-eye"></i> Ver
+                    </a>
+                </div>
+                
+                <div class="stat-card danger">
+                    <div class="stat-icon">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalTransfers">0</h3>
+                        <p>Transferencias</p>
+                    </div>
+                    <a href="transferencias.html" class="stat-action">
+                        <i class="fas fa-share"></i> Transferir
+                    </a>
+                </div>
+            </section>
+            
+            <!-- Main Content Grid -->
+            <div class="content-grid">
+                <!-- Quick Actions -->
+                <section class="card quick-actions">
+                    <div class="card-header">
+                        <h3><i class="fas fa-bolt"></i> Acciones Rápidas</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="actions-grid">
+                            <a href="tickets.html" class="action-btn">
+                                <div class="action-icon">
+                                    <i class="fas fa-ticket-alt"></i>
+                                </div>
+                                <span>Comprar Tickets</span>
+                            </a>
+                            <a href="recargas.html" class="action-btn">
+                                <div class="action-icon">
+                                    <i class="fas fa-coins"></i>
+                                </div>
+                                <span>Recargar Puntos</span>
+                            </a>
+                            <a href="transferencias.html" class="action-btn">
+                                <div class="action-icon">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </div>
+                                <span>Transferir</span>
+                            </a>
+                            <a href="perfil.html" class="action-btn">
+                                <div class="action-icon">
+                                    <i class="fas fa-user-cog"></i>
+                                </div>
+                                <span>Mi Perfil</span>
+                            </a>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Recent Tickets -->
+                <section class="card recent-tickets">
+                    <div class="card-header">
+                        <h3><i class="fas fa-history"></i> Tickets Recientes</h3>
+                        <a href="historial.html" class="card-link">Ver todo</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="tickets-list" id="recentTickets">
+                            <div class="loading">Cargando tickets...</div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Available Tickets Preview -->
+                <section class="card tickets-preview">
+                    <div class="card-header">
+                        <h3><i class="fas fa-ticket-alt"></i> Tickets Disponibles</h3>
+                        <a href="tickets.html" class="card-link">Ver todos</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="tickets-grid-mini" id="availableTicketsGrid">
+                            <!-- Los tickets se cargarán aquí -->
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- System Info -->
+                <section class="card system-info">
+                    <div class="card-header">
+                        <h3><i class="fas fa-info-circle"></i> Información del Sistema</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-item">
+                            <i class="fas fa-tag"></i>
+                            <div>
+                                <span class="info-label">Precio por Ticket:</span>
+                                <span class="info-value" id="ticketPrice">10 puntos</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-dollar-sign"></i>
+                            <div>
+                                <span class="info-label">Tasa de Cambio:</span>
+                                <span class="info-value" id="exchangeRate">100 pts / $1</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-bullhorn"></i>
+                            <div>
+                                <span class="info-label">Estado de la Rifa:</span>
+                                <span class="info-value status-active" id="raffleStatus">Activa</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-users"></i>
+                            <div>
+                                <span class="info-label">Usuarios Activos:</span>
+                                <span class="info-value" id="activeUsers">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            
+            <!-- Recent Transactions -->
+            <section class="card recent-transactions">
+                <div class="card-header">
+                    <h3><i class="fas fa-exchange-alt"></i> Transacciones Recientes</h3>
+                    <a href="historial.html" class="card-link">Ver historial completo</a>
+                </div>
+                <div class="card-body">
+                    <div class="transactions-table" id="recentTransactions">
+                        <div class="loading">Cargando transacciones...</div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Footer -->
+            <footer class="page-footer">
+                <p>© 2024 Rifa 33 - Sistema de Rifas Digital</p>
+                <p><i class="fas fa-shield-alt"></i> Tu información está 100% segura</p>
+            </footer>
+        </main>
+    </div>
+    
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Verificar autenticación
+        document.addEventListener('DOMContentLoaded', async () => {
+            const usuario = window.verificarAutenticacion();
+            if (!usuario) return;
+            
+            // Cargar datos del usuario
+            await cargarDatosUsuario();
+            
+            // Cargar datos del dashboard
+            await cargarDashboardData();
+            
+            // Configurar dropdown de usuario
+            setupUserDropdown();
+            
+            // Mostrar/ocultar enlace de admin según rol
+            if (usuario.role === 'admin') {
+                document.getElementById('adminLink').style.display = 'flex';
+            }
+        });
+        
+        async function cargarDatosUsuario() {
+            const usuario = JSON.parse(localStorage.getItem('usuarioRifa'));
+            
+            // Actualizar UI con datos del usuario
+            document.getElementById('sidebarUserInfo').innerHTML = `
+                <h3>${usuario.nombre}</h3>
+                <p class="user-role">${usuario.role === 'admin' ? 'Administrador' : 'Usuario'}</p>
+            `;
+            
+            document.getElementById('userName').textContent = usuario.nombre;
+            document.getElementById('welcomeText').textContent = `Bienvenido de vuelta, ${usuario.nombre.split(' ')[0]}!`;
+            document.getElementById('totalPoints').textContent = usuario.puntos;
+            document.getElementById('sidebarPoints').innerHTML = `
+                <i class="fas fa-coins"></i>
+                <div>
+                    <span class="points-label">Tus Puntos</span>
+                    <span class="points-value">${usuario.puntos}</span>
+                </div>
+            `;
+        }
+        
+        async function cargarDashboardData() {
+            try {
+                const usuario = JSON.parse(localStorage.getItem('usuarioRifa'));
+                
+                // 1. Cargar configuración del sistema
+                const config = await window.obtenerUno("SELECT * FROM system_config WHERE id = 1");
+                if (config) {
+                    document.getElementById('ticketPrice').textContent = `${config.precio_ticket} puntos`;
+                    document.getElementById('exchangeRate').textContent = `${config.puntos_por_dolar} pts / $1`;
+                    document.getElementById('raffleStatus').textContent = config.rifa_activa ? 'Activa' : 'Inactiva';
+                    document.getElementById('raffleStatus').className = config.rifa_activa ? 'info-value status-active' : 'info-value status-inactive';
+                }
+                
+                // 2. Contar tickets comprados por el usuario
+                const ticketsComprados = await window.obtenerDatos(
+                    `SELECT COUNT(*) as total FROM tickets WHERE user_id = ${usuario.id} AND estado = 'vendido'`
+                );
+                if (ticketsComprados.length > 0) {
+                    document.getElementById('totalTickets').textContent = ticketsComprados[0].total || 0;
+                }
+                
+                // 3. Contar tickets disponibles
+                const ticketsDisponibles = await window.obtenerDatos(
+                    `SELECT COUNT(*) as total FROM tickets WHERE estado = 'disponible'`
+                );
+                if (ticketsDisponibles.length > 0) {
+                    document.getElementById('availableTickets').textContent = ticketsDisponibles[0].total || 100;
+                }
+                
+                // 4. Contar transferencias del usuario
+                const transferencias = await window.obtenerDatos(
+                    `SELECT COUNT(*) as total FROM transferencias WHERE from_user_id = ${usuario.id} OR to_user_id = ${usuario.id}`
+                );
+                if (transferencias.length > 0) {
+                    document.getElementById('totalTransfers').textContent = transferencias[0].total || 0;
+                }
+                
+                // 5. Cargar tickets recientes del usuario
+                const ticketsRecientes = await window.obtenerDatos(
+                    `SELECT numero, fecha_compra FROM tickets 
+                     WHERE user_id = ${usuario.id} AND estado = 'vendido'
+                     ORDER BY fecha_compra DESC LIMIT 5`
+                );
+                
+                if (ticketsRecientes.length > 0) {
+                    let html = '';
+                    ticketsRecientes.forEach(ticket => {
+                        const fecha = new Date(ticket.fecha_compra).toLocaleDateString();
+                        html += `
+                            <div class="ticket-item">
+                                <div class="ticket-number">🎫 ${ticket.numero}</div>
+                                <div class="ticket-date">${fecha}</div>
+                            </div>
+                        `;
+                    });
+                    document.getElementById('recentTickets').innerHTML = html;
+                } else {
+                    document.getElementById('recentTickets').innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-ticket-alt"></i>
+                            <p>No has comprado tickets aún</p>
+                        </div>
+                    `;
+                }
+                
+                // 6. Cargar transacciones recientes
+                const transacciones = await window.obtenerDatos(
+                    `SELECT tipo, puntos, descripcion, fecha 
+                     FROM transacciones 
+                     WHERE user_id = ${usuario.id}
+                     ORDER BY fecha DESC LIMIT 5`
+                );
+                
+                if (transacciones.length > 0) {
+                    let html = '';
+                    transacciones.forEach(trans => {
+                        const fecha = new Date(trans.fecha).toLocaleDateString();
+                        const icon = trans.tipo === 'compra' ? '🛒' : 
+                                    trans.tipo === 'recarga' ? '💰' : 
+                                    trans.tipo.includes('transferencia') ? '🔄' : '📝';
+                        const clase = trans.puntos > 0 ? 'positive' : 'negative';
+                        
+                        html += `
+                            <div class="transaction-row">
+                                <div class="transaction-icon">${icon}</div>
+                                <div class="transaction-details">
+                                    <div class="transaction-type">${trans.descripcion || trans.tipo}</div>
+                                    <div class="transaction-date">${fecha}</div>
+                                </div>
+                                <div class="transaction-amount ${clase}">
+                                    ${trans.puntos > 0 ? '+' : ''}${trans.puntos} pts
+                                </div>
+                            </div>
+                        `;
+                    });
+                    document.getElementById('recentTransactions').innerHTML = html;
+                } else {
+                    document.getElementById('recentTransactions').innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exchange-alt"></i>
+                            <p>No hay transacciones recientes</p>
+                        </div>
+                    `;
+                }
+                
+                // 7. Cargar vista previa de tickets disponibles
+                const ticketsDisponiblesList = await window.obtenerDatos(
+                    `SELECT numero FROM tickets WHERE estado = 'disponible' ORDER BY numero LIMIT 20`
+                );
+                
+                if (ticketsDisponiblesList.length > 0) {
+                    let html = '';
+                    ticketsDisponiblesList.forEach(ticket => {
+                        html += `<div class="ticket-mini">${ticket.numero}</div>`;
+                    });
+                    document.getElementById('availableTicketsGrid').innerHTML = html;
+                }
+                
+                // 8. Contar usuarios activos
+                const usuariosActivos = await window.obtenerDatos(
+                    `SELECT COUNT(*) as total FROM users WHERE role = 'user'`
+                );
+                if (usuariosActivos.length > 0) {
+                    document.getElementById('activeUsers').textContent = usuariosActivos[0].total || 0;
+                }
+                
+            } catch (error) {
+                console.error('Error al cargar datos del dashboard:', error);
+                mostrarError('Error al cargar datos del sistema');
+            }
+        }
+        
+        function setupUserDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            const trigger = dropdown.querySelector('.dropdown-trigger');
+            
+            trigger.addEventListener('click', () => {
+                dropdown.classList.toggle('active');
+            });
+            
+            // Cerrar dropdown al hacer clic fuera
+            document.addEventListener('click', (e) => {
+                if (!dropdown.contains(e.target)) {
+                    dropdown.classList.remove('active');
+                }
+            });
+        }
+        
+        function mostrarError(mensaje) {
+            // Crear notificación de error
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'notification error';
+            errorDiv.innerHTML = `
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${mensaje}</span>
+            `;
+            
+            document.body.appendChild(errorDiv);
+            
+            // Remover después de 5 segundos
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+        
+        // Toggle sidebar en móviles
+        document.getElementById('sidebarToggle').addEventListener('click', () => {
+            document.querySelector('.sidebar').classList.toggle('collapsed');
+        });
+    </script>
+</body>
+</html>

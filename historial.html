@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial - Rifa 33</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .historial-container {
+            padding: 20px;
+        }
+        
+        .historial-header {
+            margin-bottom: 30px;
+        }
+        
+        .historial-filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .filter-label {
+            font-weight: 500;
+            color: #555;
+            min-width: 80px;
+        }
+        
+        .filter-select, .filter-input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            min-width: 150px;
+        }
+        
+        .historial-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card-historial {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-value-historial {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label-historial {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .historial-tabs {
+            display: flex;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 20px;
+        }
+        
+        .tab-button {
+            padding: 12px 25px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-button:hover {
+            color: #2196f3;
+        }
+        
+        .tab-button.active {
+            color: #2196f3;
+        }
+        
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #2196f3;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .historial-table-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+        
+        .historial-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .historial-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .historial-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .historial-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .transaction-type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .type-compra {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .type-recarga {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+        
+        .type-transferencia {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        
+        .type-reembolso {
+            background: #fce4ec;
+            color: #c2185b;
+        }
+        
+        .points-change {
+            font-weight: 600;
+        }
+        
+        .points-positive {
+            color: #4caf50;
+        }
+        
+        .points-negative {
+            color: #f44336;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #666;
+        }
+        
+        .empty-icon {
+            font-size: 50px;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 20px;
+            padding: 20px;
+        }
+        
+        .page-btn {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+            min-width: 40px;
+        }
+        
+        .page-btn:hover {
+            background: #f5f5f5;
+        }
+        
+        .page-btn.active {
+            background: #2196f3;
+            color: white;
+            border-color: #2196f3;
+        }
+        
+        .page-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .export-options-historial {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .export-btn-historial {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .export-btn-historial:hover {
+            background: #f8f9fa;
+        }
+        
+        .date-range {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .date-input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .search-box-historial {
+            position: relative;
+            flex: 1;
+            max-width: 300px;
+        }
+        
+        .search-input-historial {
+            width: 100%;
+            padding: 8px 15px 8px 35px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .search-icon-historial {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        
+        .loading-historial {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2196f3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .transaction-details {
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+        
+        .transaction-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn-small {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .action-btn-small:hover {
+            background: #f5f5f5;
+        }
+        
+        @media (max-width: 768px) {
+            .historial-filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .filter-label {
+                min-width: auto;
+            }
+            
+            .historial-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .historial-tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+            
+            .tab-button {
+                white-space: nowrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="user-info" id="sidebarUserInfo">
+                    <h3>Cargando...</h3>
+                    <p class="user-role">Usuario</p>
+                </div>
+                <div class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <a href="dashboard.html" class="menu-item">
+                    <i class="fas fa-home"></i>
+                    <span>Inicio</span>
+                </a>
+                <a href="tickets.html" class="menu-item">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Comprar Tickets</span>
+                </a>
+                <a href="recargas.html" class="menu-item">
+                    <i class="fas fa-coins"></i>
+                    <span>Recargar Puntos</span>
+                </a>
+                <a href="transferencias.html" class="menu-item">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transferencias</span>
+                </a>
+                <a href="historial.html" class="menu-item active">
+                    <i class="fas fa-history"></i>
+                    <span>Historial</span>
+                </a>
+                <a href="perfil.html" class="menu-item">
+                    <i class="fas fa-user-cog"></i>
+                    <span>Mi Perfil</span>
+                </a>
+                
+                <div class="menu-divider"></div>
+                
+                <a href="admin.html" class="menu-item admin-item" id="adminLink">
+                    <i class="fas fa-crown"></i>
+                    <span>Panel Admin</span>
+                </a>
+                
+                <a href="#" class="menu-item logout-item" onclick="cerrarSesion()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="points-display" id="sidebarPoints">
+                    <i class="fas fa-coins"></i>
+                    <div>
+                        <span class="points-label">Tus Puntos</span>
+                        <span class="points-value">0</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <h1><i class="fas fa-history"></i> Historial</h1>
+                    <p class="welcome-text">Revisa todas tus transacciones y actividades</p>
+                </div>
+                <div class="top-bar-right">
+                    <div class="user-dropdown" id="userDropdown">
+                        <div class="dropdown-trigger">
+                            <span id="userName">Cargando...</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="dropdown-menu">
+                            <a href="perfil.html"><i class="fas fa-user"></i> Mi Perfil</a>
+                            <a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" onclick="cerrarSesion()"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="historial-container">
+                <!-- Estadísticas rápidas -->
+                <div class="historial-stats">
+                    <div class="stat-card-historial">
+                        <div class="stat-value-historial" id="totalTransacciones">0</div>
+                        <div class="stat-label-historial">Transacciones Totales</div>
+                    </div>
+                    <div class="stat-card-historial">
+                        <div class="stat-value-historial" id="puntosGastados">0</div>
+                        <div class="stat-label-historial">Puntos Gastados</div>
+                    </div>
+                    <div class="stat-card-historial">
+                        <div class="stat-value-historial" id="puntosRecibidos">0</div>
+                        <div class="stat-label-historial">Puntos Recibidos</div>
+                    </div>
+                    <div class="stat-card-historial">
+                        <div class="stat-value-historial" id="ticketsComprados">0</div>
+                        <div class="stat-label-historial">Tickets Comprados</div>
+                    </div>
+                </div>
+                
+                <!-- Filtros y búsqueda -->
+                <div class="historial-filters">
+                    <div class="search-box-historial">
+                        <i class="fas fa-search search-icon-historial"></i>
+                        <input type="text" 
+                               class="search-input-historial" 
+                               placeholder="Buscar transacciones..."
+                               id="searchInput"
+                               onkeyup="searchTransactions()">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label class="filter-label">Tipo:</label>
+                        <select class="filter-select" id="typeFilter" onchange="filterTransactions()">
+                            <option value="all">Todos</option>
+                            <option value="compra">Compra</option>
+                            <option value="recarga">Recarga</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="reembolso">Reembolso</option>
+                        </select>
+                    </div>
+                    
+                    <div class="date-range">
+                        <input type="date" 
+                               class="date-input" 
+                               id="startDate"
+                               onchange="filterTransactions()">
+                        <span>a</span>
+                        <input type="date" 
+                               class="date-input" 
+                               id="endDate"
+                               onchange="filterTransactions()">
+                    </div>
+                    
+                    <div class="export-options-historial">
+                        <button class="export-btn-historial" onclick="exportToPDF()">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
+                        <button class="export-btn-historial" onclick="exportToCSV()">
+                            <i class="fas fa-file-csv"></i> CSV
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Pestañas -->
+                <div class="historial-tabs">
+                    <button class="tab-button active" onclick="showTab('transacciones')">
+                        <i class="fas fa-exchange-alt"></i> Transacciones
+                    </button>
+                    <button class="tab-button" onclick="showTab('tickets')">
+                        <i class="fas fa-ticket-alt"></i> Mis Tickets
+                    </button>
+                    <button class="tab-button" onclick="showTab('recargas')">
+                        <i class="fas fa-coins"></i> Recargas
+                    </button>
+                    <button class="tab-button" onclick="showTab('transferencias')">
+                        <i class="fas fa-share-alt"></i> Transferencias
+                    </button>
+                </div>
+                
+                <!-- Contenido de Transacciones -->
+                <div class="tab-content active" id="transaccionesTab">
+                    <div class="historial-table-container">
+                        <table class="historial-table" id="transactionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Descripción</th>
+                                    <th>Puntos</th>
+                                    <th>Saldo</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsBody">
+                                <!-- Las transacciones se cargarán aquí -->
+                                <tr>
+                                    <td colspan="6" class="loading-historial">
+                                        <div class="loading-spinner"></div>
+                                        <p>Cargando transacciones...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="pagination" id="transactionsPagination">
+                        <!-- La paginación se generará aquí -->
+                    </div>
+                </div>
+                
+                <!-- Contenido de Tickets -->
+                <div class="tab-content" id="ticketsTab">
+                    <div class="historial-table-container">
+                        <table class="historial-table" id="ticketsTable">
+                            <thead>
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Compra</th>
+                                    <th>Precio</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ticketsBody">
+                                <!-- Los tickets se cargarán aquí -->
+                                <tr>
+                                    <td colspan="5" class="loading-historial">
+                                        <div class="loading-spinner"></div>
+                                        <p>Cargando tickets...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="pagination" id="ticketsPagination">
+                        <!-- La paginación se generará aquí -->
+                    </div>
+                </div>
+                
+                <!-- Contenido de Recargas -->
+                <div class="tab-content" id="recargasTab">
+                    <div class="historial-table-container">
+                        <table class="historial-table" id="rechargesTable">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Monto</th>
+                                    <th>Puntos</th>
+                                    <th>Método</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rechargesBody">
+                                <!-- Las recargas se cargarán aquí -->
+                                <tr>
+                                    <td colspan="6" class="loading-historial">
+                                        <div class="loading-spinner"></div>
+                                        <p>Cargando recargas...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="pagination" id="rechargesPagination">
+                        <!-- La paginación se generará aquí -->
+                    </div>
+                </div>
+                
+                <!-- Contenido de Transferencias -->
+                <div class="tab-content" id="transferenciasTab">
+                    <div class="historial-table-container">
+                        <table class="historial-table" id="transfersTable">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Destinatario</th>
+                                    <th>Puntos</th>
+                                    <th>Estado</th>
+                                    <th>Referencia</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transfersBody">
+                                <!-- Las transferencias se cargarán aquí -->
+                                <tr>
+                                    <td colspan="6" class="loading-historial">
+                                        <div class="loading-spinner"></div>
+                                        <p>Cargando transferencias...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="pagination" id="transfersPagination">
+                        <!-- La paginación se generará aquí -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal para detalles de transacción -->
+    <div class="modal" id="transactionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-info-circle"></i> Detalles de Transacción</h3>
+                <button class="close-btn" onclick="closeTransactionModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="transactionDetails">
+                <!-- Los detalles se cargarán aquí -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeTransactionModal()">Cerrar</button>
+                <button class="btn-primary" onclick="printTransaction()">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Variables globales
+        let currentTab = 'transacciones';
+        let currentPage = {
+            transacciones: 1,
+            tickets: 1,
+            recargas: 1,
+            transferencias: 1
+        };
+        let pageSize = 10;
+        let currentFilters = {
+            type: 'all',
+            startDate: '',
+            endDate: '',
+            search: ''
+        };
+        
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', async () => {
+            const usuario = window.verificarAutenticacion();
+            if (!usuario) return;
+            
+            await initHistorial();
+            setupUserDropdown();
+            
+            // Actualizar información del usuario
+            document.getElementById('sidebarUserInfo').innerHTML = `
+                <h3>${usuario.nombre}</h3>
+                <p class="user-role">${usuario.role === 'admin' ? 'Administrador' : 'Usuario'}</p>
+            `;
+            document.getElementById('userName').textContent = usuario.nombre;
+            document.getElementById('sidebarPoints').innerHTML = `
+                <i class="fas fa-coins"></i>
+                <div>
+                    <span class="points-label">Tus Puntos</span>
+                    <span class="points-value">${usuario.puntos}</span>
+                </div>
+            `;
+            
+            // Configurar fechas por defecto (últimos 30 días)
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 30);
+            
+            document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+            document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+            
+            currentFilters.startDate = startDate.toISOString().split('T')[0];
+            currentFilters.endDate = endDate.toISOString().split('T')[0];
+            
+            // Mostrar admin link si es admin
+            if (usuario.role === 'admin') {
+                document.getElementById('adminLink').style.display = 'flex';
+            }
+        });
+        
+        async function initHistorial() {
+            try {
+                // Cargar estadísticas
+                await loadHistorialStats();
+                
+                // Cargar transacciones iniciales
+                await loadTransactions();
+                
+            } catch (error) {
+                console.error('Error al inicializar historial:', error);
+                showNotification('Error al cargar historial', 'error');
+            }
+        }
+        
+        async function loadHistorialStats() {
+            try {
+                const usuario = JSON.parse(localStorage.getItem('usuarioRifa'));
+                
+                // Cargar estadísticas
+                const stats = await window.obtenerDatos(`
+                    SELECT 
+                        (SELECT COUNT(*) FROM transacciones WHERE user_id = ${usuario.id}) as total_transacciones,
+                        (SELECT ABS(SUM(puntos)) FROM transacciones WHERE user_id = ${usuario.id} AND puntos < 0) as puntos_gastados,
+                        (SELECT SUM(puntos) FROM transacciones WHERE user_id = ${usuario.id} AND puntos > 0) as puntos_recibidos,
+                        (SELECT COUNT(*) FROM tickets WHERE user_id = ${usuario.id} AND estado = 'vendido') as tickets_comprados
+                `);
+                
+                if (stats && stats.length > 0) {
+                    const data = stats[0];
+                    
+                    document.getElementById('totalTransacciones').textContent = data.total_transacciones || 0;
+                    document.getElementById('puntosGastados').textContent = data.puntos_gastados || 0;
+                    document.getElementById('puntosRecibidos').textContent = data.puntos_recibidos || 0;
+                    document.getElementById('ticketsComprados').textContent = data.tickets_comprados || 0;
+                }
+                
+            } catch (error) {
+                console.error('Error al cargar estadísticas:', error);
+            }
+        }
+        
+        async function loadTransactions() {
+            try {
+                const usuario = JSON.parse(localStorage.getItem('usuarioRifa'));
+                const offset = (currentPage.transacciones - 1) * pageSize;
+                
+                // Construir consulta con filtros
+                let whereClause = `WHERE user_id = ${usuario.id}`;
+                
+                if (currentFilters.type !== 'all') {
+                    whereClause += ` AND tipo = '${currentFilters.type}'`;
+                }
+                
+                if (currentFilters.startDate && currentFilters.endDate) {
+                    whereClause += ` AND DATE(fecha) BETWEEN '${currentFilters.startDate}' AND '${currentFilters.endDate}'`;
+                }
+                
+                if (currentFilters.search) {
+                    whereClause += ` AND (descripcion LIKE '%${currentFilters.search}%' OR tipo LIKE '%${currentFilters.search}%')`;
+                }
+                
+                // Obtener transacciones
+                const transactions = await window.obtenerDatos(`
+                    SELECT * FROM transacciones
+                    ${whereClause}
+                    ORDER BY fecha DESC
+                    LIMIT ${pageSize} OFFSET ${offset}
+                `);
+                
+                // Obtener total para paginación
+                const totalResult = await window.obtenerUno(
+                    `SELECT COUNT(*) as total FROM transacciones ${whereClause}`
+                );
+                const total = totalResult ? totalResult.total : 0;
+                
+                // Renderizar tabla
+                renderTransactionsTable(transactions || []);
+                
+                // Renderizar paginación
+                renderPagination('transactionsPagination', total, 'transacciones');
+                
+                // Actualizar estadísticas si es necesario
+                if (currentFilters.type === 'all' && !currentFilters.search) {
+                    await loadHistorialStats();
+                }
+                
+            } catch (error) {
+                console.error('Error al cargar transacciones:', error);
+                showError('Error al cargar transacciones');
+            }
+        }
+        
+        function renderTransactionsTable(transactions) {
+            const tbody = document.getElementById('transactionsBody');
+            
+            if (!transactions || transactions.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-exchange-alt"></i>
+                            </div>
+                            <p>No hay transacciones para mostrar</p>
+                            <p class="small">Realiza tu primera compra o recarga para ver tu historial</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            let saldoAcumulado = 0;
+            const usuario = JSON.parse(localStorage.getItem('usuarioRifa'));
+            
+            // Calcular saldo inicial
+            transactions.forEach((trans, index) => {
+                const fecha = new Date(trans.fecha).toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                // Determinar tipo y clase
+                let tipoClase = '';
+                let tipoIcon = '';
+                switch(trans.tipo) {
+                    case 'compra':
+                        tipoClase = 'type-compra';
+                        tipoIcon = '🛒';
+                        break;
+                    case 'recarga':
+                        tipoClase = 'type-recarga';
+                        tipoIcon = '💰';
+                        break;
+                    case 'transferencia_salida':
+                    case 'transferencia_entrada':
+                        tipoClase = 'type-transferencia';
+                        tipoIcon = '🔄';
+                        break;
+                    case 'reembolso':
+                        tipoClase = 'type-reembolso';
+                        tipoIcon = '↩️';
+                        break;
+                }
+                
+                // Calcular saldo acumulado (simulado)
+                // En un sistema real, esto debería calcularse desde la primera transacción
+                saldoAcumulado += trans.puntos;
+                const saldoClase = trans.puntos >= 0 ? 'points-positive' : 'points-negative';
+                const puntosSigno = trans.puntos > 0 ? '+' : '';
+                
+                html += `
+                    <tr>
+                        <td>${fecha}</td>
+                        <td>
+                            <span class="transaction-type ${tipoClase}">
+                                ${tipoIcon} ${trans.tipo}
+                            </span>
+                        </td>
+                        <td class="transaction-details">${trans.descripcion || 'Sin descripción'}</td>
+                        <td class="points-change ${saldoClase}">
+                            ${puntosSigno}${trans.puntos} pts
+                        </td>
+                        <td>${saldoAcumulado} pts</td>
+                        <td>
+                            <div class="transaction-actions">
+                                <button class="action-btn-small" onclick="viewTransactionDetails(${trans.id})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        async function loadTickets() {
+            try {
+                const usuario = JSON.parse(localStorage.getItem('usuarioRifa'));
+                const offset = (currentPage.tickets - 1) * pageSize;
+                
+                const tickets = await window.obtenerDatos(`
+                    SELECT numero, estado, fecha_compra 
+                    FROM tickets 
+                    WHERE user_id = ${usuario.id}
+                    ORDER BY fecha_compra DESC
+                    LIMIT ${pageSize} OFFSET ${offset}
+                `);
+                
+                const totalResult = await window.obtenerUno(
+                    `SELECT COUNT(*) as total FROM tickets WHERE user_id = ${usuario.id}`
+                );
+                const total = totalResult ? totalResult.total : 0;
+                
+                renderTicketsTable(tickets || []);
+                renderPagination('ticketsPagination', total, 'tickets');
+                
+            } catch (error) {
+                console.error('Error al cargar tickets:', error);
+                showError('Error al cargar tickets');
+            }
+        }
+        
+        function renderTicketsTable(tickets) {
+            const tbody = document.getElementById('ticketsBody');
+            
+            if (!tickets || tickets.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-ticket-alt"></i>
+                            </div>
+                            <p>No has comprado tickets aún</p>
+                            <p class="small">Visita la sección de tickets para hacer tu primera compra</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            tickets.forEach(ticket => {
+                const fecha = ticket.fecha_compra 
+                    ? new Date(ticket.fecha_compra).toLocaleDateString()
+                    : 'N/A';
+                
+                let estadoClase = '';
+                let estadoTexto = '';
+                switch(ticket.estado) {
+                    case 'vendido':
+                        estadoClase = 'status-sold';
+                        estadoTexto = 'Vendido';
+                        break;
+                    case 'reservado':
+                        estadoClase = 'status-reserved';
+                        estadoTexto = 'Reservado';
+                        break;
+                }
+                
+                html += `
+                    <tr>
+                        <td><strong>#${ticket.numero}</strong></td>
+                        <td><span class="status-badge ${estadoClase}">${estadoTexto}</span></td>
+                        <td>${fecha}</td>
+                        <td>10 pts</td>
+                        <td>
+                            <div class="transaction-actions">
+                                <button class="action-btn-small" onclick="viewTicketDetails(${ticket.numero})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        async function loadRecharges() {
+            try {
+                const usuario = JSON.parse(localStorage.getItem('usuarioRifa'));
+                const offset = (currentPage.recargas - 1) * pageSize;
+                
+                const recharges = await window.obtenerDatos(`
+                    SELECT id, monto, puntos_solicitados, metodo, estado, fecha_solicitud
+                    FROM recargas 
+                    WHERE user_id = ${usuario.id}
+                    ORDER BY fecha_solicitud DESC
+                    LIMIT ${pageSize} OFFSET ${offset}
+                `);
+                
+                const totalResult = await window.obtenerUno(
+                    `SELECT COUNT(*) as total FROM recargas WHERE user_id = ${usuario.id}`
+                );
+                const total = totalResult ? totalResult.total : 0;
+                
+                renderRechargesTable(recharges || []);
+                renderPagination('rechargesPagination', total, 'recargas');
+                
+            } catch (error) {
+                console.error('Error al cargar recargas:', error);
+                showError('Error al cargar recargas');
+            }
+        }
+        
+        function renderRechargesTable(recharges) {
+            const tbody = document.getElementById('rechargesBody');
+            
+            if (!recharges || recharges.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <p>No has realizado recargas</p>
+                            <p class="small">Visita la sección de recargas para cargar puntos</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            recharges.forEach(recharge => {
+                const fecha = new Date(recharge.fecha_solicitud).toLocaleDateString();
+                
+                let estadoClase = '';
+                let estadoTexto = '';
+                switch(recharge.estado) {
+                    case 'pendiente':
+                        estadoClase = 'status-pending';
+                        estadoTexto = 'Pendiente';
+                        break;
+                    case 'aprobado':
+                        estadoClase = 'status-approved';
+                        estadoTexto = 'Aprobado';
+                        break;
+                    case 'rechazado':
+                        estadoClase = 'status-rejected';
+                        estadoTexto = 'Rechazado';
+                        break;
+                }
+                
+                html += `
+                    <tr>
+                        <td>${fecha}</td>
+                        <td>$${recharge.monto.toFixed(2)}</td>
+                        <td>${recharge.puntos_solicitados} pts</td>
+                        <td>${recharge.metodo === 'pago_movil' ? 'Pago Móvil' : 'Transferencia'}</td>
+                        <td><span class="status-badge ${estadoClase}">${estadoTexto}</span></td>
+                        <td>
+                            <div class="transaction-actions">
+                                <button class="action-btn-small" onclick="viewRechargeDetails(${recharge.id})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        async function loadTransfers() {
+            try {
+                const usuario = JSON.parse(localStorage.getItem('usuarioRifa'));
+                const offset = (currentPage.transferencias - 1) * pageSize;
+                
+                const transfers = await window.obtenerDatos(`
+                    SELECT t.*, 
+                           u1.nombre as from_user_name,
+                           u2.nombre as to_user_name
+                    FROM transferencias t
+                    JOIN users u1 ON t.from_user_id = u1.id
+                    JOIN users u2 ON t.to_user_id = u2.id
+                    WHERE t.from_user_id = ${usuario.id} OR t.to_user_id = ${usuario.id}
+                    ORDER BY t.fecha DESC
+                    LIMIT ${pageSize} OFFSET ${offset}
+                `);
+                
+                const totalResult = await window.obtenerUno(
+                    `SELECT COUNT(*) as total FROM transferencias WHERE from_user_id = ${usuario.id} OR to_user_id = ${usuario.id}`
+                );
+                const total = totalResult ? totalResult.total : 0;
+                
+                renderTransfersTable(transfers || []);
+                renderPagination('transfersPagination', total, 'transferencias');
+                
+            } catch (error) {
+                console.error('Error al cargar transferencias:', error);
+                showError('Error al cargar transferencias');
+            }
+        }
+        
+        function renderTransfersTable(transfers) {
+            const tbody = document.getElementById('transfersBody');
+            
+            if (!transfers || transfers.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-share-alt"></i>
+                            </div>
+                            <p>No has realizado transferencias</p>
+                            <p class="small">Visita la sección de transferencias para enviar puntos</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            const usuario = JSON.parse(localStorage.getItem('usuarioRifa'));
+            
+            transfers.forEach(transfer => {
+                const fecha = new Date(transfer.fecha).toLocaleDateString();
+                const isSender = transfer.from_user_id === usuario.id;
+                const otherUser = isSender ? transfer.to_user_name : transfer.from_user_name;
+                const direction = isSender ? '→ Enviado a' : '← Recibido de';
+                
+                html += `
+                    <tr>
+                        <td>${fecha}</td>
+                        <td>${direction} ${otherUser}</td>
+                        <td class="${isSender ? 'points-negative' : 'points-positive'}">
+                            ${isSender ? '-' : '+'}${transfer.puntos} pts
+                        </td>
+                        <td><span class="status-badge status-approved">${transfer.estado}</span></td>
+                        <td>${transfer.id}</td>
+                        <td>
+                            <div class="transaction-actions">
+                                <button class="action-btn-small" onclick="viewTransferDetails(${transfer.id})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        function showTab(tabName) {
+            // Ocultar todas las pestañas
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Desactivar todos los botones
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Mostrar pestaña seleccionada
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+            
+            // Activar botón
+            event.target.closest('.tab-button').classList.add('active');
+            
+            // Cargar datos de la pestaña
+            currentTab = tabName;
+            loadTabData(tabName);
+        }
+        
+        function loadTabData(tabName) {
+            switch(tabName) {
+                case 'transacciones':
+                    loadTransactions();
+                    break;
+                case 'tickets':
+                    loadTickets();
+                    break;
+                case 'recargas':
+                    loadRecharges();
+                    break;
+                case 'transferencias':
+                    loadTransfers();
+                    break;
+            }
+        }
+        
+        function filterTransactions() {
+            // Actualizar filtros
+            currentFilters.type = document.getElementById('typeFilter').value;
+            currentFilters.startDate = document.getElementById('startDate').value;
+            currentFilters.endDate = document.getElementById('endDate').value;
+            
+            // Resetear a página 1
+            currentPage.transacciones = 1;
+            
+            // Recargar transacciones
+            loadTransactions();
+        }
+        
+        function searchTransactions() {
+            currentFilters.search = document.getElementById('searchInput').value.trim();
+            currentPage.transacciones = 1;
+            loadTransactions();
+        }
+        
+        function renderPagination(containerId, totalItems, tabName) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const totalPages = Math.ceil(totalItems / pageSize);
+            const current = currentPage[tabName];
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            // Botón anterior
+            html += `
+                <button class="page-btn ${current === 1 ? 'disabled' : ''}" 
+                        onclick="changePage(${tabName}, ${current - 1})" 
+                        ${current === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            `;
+            
+            // Páginas
+            const maxVisible = 5;
+            let startPage = Math.max(1, current - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            
+            if (endPage - startPage + 1 < maxVisible) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `
+                    <button class="page-btn ${i === current ? 'active' : ''}" 
+                            onclick="changePage('${tabName}', ${i})">
+                        ${i}
+                    </button>
+                `;
+            }
+            
+            // Botón siguiente
+            html += `
+                <button class="page-btn ${current === totalPages ? 'disabled' : ''}" 
+                        onclick="changePage(${tabName}, ${current + 1})" 
+                        ${current === totalPages ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            `;
+            
+            container.innerHTML = html;
+        }
+        
+        function changePage(tabName, page) {
+            currentPage[tabName] = page;
+            loadTabData(tabName);
+            
+            // Scroll al inicio de la tabla
+            const tabContent = document.getElementById(`${tabName}Tab`);
+            if (tabContent) {
+                tabContent.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        async function viewTransactionDetails(transactionId) {
+            try {
+                const transaction = await window.obtenerUno(
+                    `SELECT * FROM transacciones WHERE id = ${transactionId}`
+                );
+                
+                if (!transaction) {
+                    showNotification('Transacción no encontrada', 'error');
+                    return;
+                }
+                
+                const fecha = new Date(transaction.fecha).toLocaleString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                let tipoTexto = '';
+                switch(transaction.tipo) {
+                    case 'compra': tipoTexto = 'Compra de Tickets'; break;
+                    case 'recarga': tipoTexto = 'Recarga de Puntos'; break;
+                    case 'transferencia_salida': tipoTexto = 'Transferencia Enviada'; break;
+                    case 'transferencia_entrada': tipoTexto = 'Transferencia Recibida'; break;
+                    case 'reembolso': tipoTexto = 'Reembolso'; break;
+                    default: tipoTexto = transaction.tipo;
+                }
+                
+                const detalles = `
+                    <div class="transaction-detail-item">
+                        <strong>ID:</strong> ${transaction.id}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Fecha:</strong> ${fecha}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Tipo:</strong> ${tipoTexto}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Puntos:</strong> 
+                        <span class="${transaction.puntos >= 0 ? 'points-positive' : 'points-negative'}">
+                            ${transaction.puntos > 0 ? '+' : ''}${transaction.puntos} puntos
+                        </span>
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Descripción:</strong><br>
+                        ${transaction.descripcion || 'Sin descripción'}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Referencia:</strong> ${transaction.referencia_id || 'N/A'}
+                    </div>
+                `;
+                
+                document.getElementById('transactionDetails').innerHTML = detalles;
+                document.getElementById('transactionModal').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Error al cargar detalles:', error);
+                showNotification('Error al cargar detalles', 'error');
+            }
+        }
+        
+        async function viewTicketDetails(ticketNumber) {
+            try {
+                const ticket = await window.obtenerUno(`
+                    SELECT t.*, u.nombre as user_name
+                    FROM tickets t
+                    LEFT JOIN users u ON t.user_id = u.id
+                    WHERE t.numero = ${ticketNumber}
+                `);
+                
+                if (!ticket) {
+                    showNotification('Ticket no encontrado', 'error');
+                    return;
+                }
+                
+                const fechaCompra = ticket.fecha_compra 
+                    ? new Date(ticket.fecha_compra).toLocaleString()
+                    : 'No comprado';
+                
+                const fechaReserva = ticket.fecha_reserva 
+                    ? new Date(ticket.fecha_reserva).toLocaleString()
+                    : 'No reservado';
+                
+                const detalles = `
+                    <div class="transaction-detail-item">
+                        <strong>Número:</strong> #${ticket.numero}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Estado:</strong> ${ticket.estado}
+                    </div>
+                    ${ticket.user_name ? `
+                        <div class="transaction-detail-item">
+                            <strong>Propietario:</strong> ${ticket.user_name}
+                        </div>
+                    ` : ''}
+                    <div class="transaction-detail-item">
+                        <strong>Fecha de Compra:</strong> ${fechaCompra}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Fecha de Reserva:</strong> ${fechaReserva}
+                    </div>
+                `;
+                
+                document.getElementById('transactionDetails').innerHTML = detalles;
+                document.getElementById('transactionModal').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Error al cargar detalles del ticket:', error);
+                showNotification('Error al cargar detalles', 'error');
+            }
+        }
+        
+        async function viewRechargeDetails(rechargeId) {
+            try {
+                const recharge = await window.obtenerUno(`
+                    SELECT r.*, u.nombre as user_name
+                    FROM recargas r
+                    JOIN users u ON r.user_id = u.id
+                    WHERE r.id = ${rechargeId}
+                `);
+                
+                if (!recharge) {
+                    showNotification('Recarga no encontrada', 'error');
+                    return;
+                }
+                
+                const fechaSolicitud = new Date(recharge.fecha_solicitud).toLocaleString();
+                const fechaResolucion = recharge.fecha_resolucion 
+                    ? new Date(recharge.fecha_resolucion).toLocaleString()
+                    : 'Pendiente';
+                
+                let estadoClase = '';
+                switch(recharge.estado) {
+                    case 'pendiente': estadoClase = 'status-pending'; break;
+                    case 'aprobado': estadoClase = 'status-approved'; break;
+                    case 'rechazado': estadoClase = 'status-rejected'; break;
+                }
+                
+                const detalles = `
+                    <div class="transaction-detail-item">
+                        <strong>ID:</strong> #${recharge.id}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Usuario:</strong> ${recharge.user_name}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Monto:</strong> $${recharge.monto.toFixed(2)}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Puntos Solicitados:</strong> ${recharge.puntos_solicitados}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Puntos Otorgados:</strong> ${recharge.puntos_otorgados || 'Pendiente'}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Método:</strong> ${recharge.metodo}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Estado:</strong> 
+                        <span class="status-badge ${estadoClase}">${recharge.estado}</span>
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Fecha Solicitud:</strong> ${fechaSolicitud}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Fecha Resolución:</strong> ${fechaResolucion}
+                    </div>
+                    ${recharge.mensaje_admin ? `
+                        <div class="transaction-detail-item">
+                            <strong>Mensaje del Admin:</strong><br>
+                            ${recharge.mensaje_admin}
+                        </div>
+                    ` : ''}
+                    ${recharge.referencia ? `
+                        <div class="transaction-detail-item">
+                            <strong>Referencia:</strong> ${recharge.referencia}
+                        </div>
+                    ` : ''}
+                `;
+                
+                document.getElementById('transactionDetails').innerHTML = detalles;
+                document.getElementById('transactionModal').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Error al cargar detalles de recarga:', error);
+                showNotification('Error al cargar detalles', 'error');
+            }
+        }
+        
+        async function viewTransferDetails(transferId) {
+            try {
+                const transfer = await window.obtenerUno(`
+                    SELECT t.*, 
+                           u1.nombre as from_user_name,
+                           u2.nombre as to_user_name
+                    FROM transferencias t
+                    JOIN users u1 ON t.from_user_id = u1.id
+                    JOIN users u2 ON t.to_user_id = u2.id
+                    WHERE t.id = ${transferId}
+                `);
+                
+                if (!transfer) {
+                    showNotification('Transferencia no encontrada', 'error');
+                    return;
+                }
+                
+                const fecha = new Date(transfer.fecha).toLocaleString();
+                
+                const detalles = `
+                    <div class="transaction-detail-item">
+                        <strong>ID:</strong> #${transfer.id}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Fecha:</strong> ${fecha}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Remitente:</strong> ${transfer.from_user_name}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Destinatario:</strong> ${transfer.to_user_name}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Puntos:</strong> ${transfer.puntos}
+                    </div>
+                    <div class="transaction-detail-item">
+                        <strong>Estado:</strong> ${transfer.estado}
+                    </div>
+                `;
+                
+                document.getElementById('transactionDetails').innerHTML = detalles;
+                document.getElementById('transactionModal').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Error al cargar detalles de transferencia:', error);
+                showNotification('Error al cargar detalles', 'error');
+            }
+        }
+        
+        function closeTransactionModal() {
+            document.getElementById('transactionModal').style.display = 'none';
+        }
+        
+        function printTransaction() {
+            window.print();
+        }
+        
+        function exportToPDF() {
+            showNotification('Exportando a PDF...', 'info');
+            // En un sistema real, aquí implementarías la exportación a PDF
+            // Podrías usar bibliotecas como jsPDF o html2pdf
+            setTimeout(() => {
+                showNotification('PDF generado (simulación)', 'success');
+            }, 1500);
+        }
+        
+        function exportToCSV() {
+            showNotification('Exportando a CSV...', 'info');
+            // En un sistema real, aquí implementarías la exportación a CSV
+            setTimeout(() => {
+                showNotification('CSV generado (simulación)', 'success');
+            }, 1500);
+        }
+        
+        function setupUserDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            const trigger = dropdown.querySelector('.dropdown-trigger');
+            
+            trigger.addEventListener('click', () => {
+                dropdown.classList.toggle('active');
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!dropdown.contains(e.target)) {
+                    dropdown.classList.remove('active');
+                }
+            });
+        }
+        
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 
+                                  type === 'error' ? 'exclamation-circle' : 
+                                  type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+        
+        function showError(message) {
+            const tbody = document.getElementById('transactionsBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        <div class="empty-icon" style="color: #f44336;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <p>${message}</p>
+                        <button class="btn-small" onclick="loadTransactions()">
+                            <i class="fas fa-sync-alt"></i> Reintentar
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+    </script>
+</body>
+</html>

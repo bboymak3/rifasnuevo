@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Rifa 33</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-box">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <i class="fas fa-ticket-alt"></i>
+                    <h1>Rifa 33</h1>
+                </div>
+                <h2>Crear Cuenta</h2>
+                <p>Regístrate para comenzar a participar en las rifas</p>
+            </div>
+            
+            <form id="registerForm" class="auth-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nombre">
+                            <i class="fas fa-user"></i> Nombre Completo
+                        </label>
+                        <input type="text" id="nombre" placeholder="Juan Pérez" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="telefono">
+                            <i class="fas fa-phone"></i> Teléfono
+                        </label>
+                        <input type="text" id="telefono" placeholder="04141234567" required>
+                        <div class="form-hint">Ej: 04141234567</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="cedula">
+                            <i class="fas fa-id-card"></i> Cédula
+                        </label>
+                        <input type="text" id="cedula" placeholder="V12345678" required>
+                        <div class="form-hint">Ej: V12345678</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="correo">
+                        <i class="fas fa-envelope"></i> Correo Electrónico
+                    </label>
+                    <input type="email" id="correo" placeholder="juan@ejemplo.com" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password">
+                            <i class="fas fa-lock"></i> Contraseña
+                        </label>
+                        <input type="password" id="password" placeholder="Mínimo 6 caracteres" required>
+                        <div class="password-strength" id="passwordStrength"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirmPassword">
+                            <i class="fas fa-lock"></i> Confirmar Contraseña
+                        </label>
+                        <input type="password" id="confirmPassword" placeholder="Repite tu contraseña" required>
+                        <div class="password-match" id="passwordMatch"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox">
+                        <input type="checkbox" id="terms" required>
+                        <span>Acepto los <a href="#" class="terms-link">Términos y Condiciones</a> y la <a href="#" class="terms-link">Política de Privacidad</a></span>
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn-primary btn-block" id="registerButton">
+                    <i class="fas fa-user-plus"></i> Crear Cuenta
+                </button>
+                
+                <div class="auth-divider">
+                    <span>¿Ya tienes cuenta?</span>
+                </div>
+                
+                <div class="auth-footer">
+                    <a href="login.html" class="btn-secondary btn-block">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                    </a>
+                    <a href="index.html" class="back-home">
+                        <i class="fas fa-arrow-left"></i> Volver al inicio
+                    </a>
+                </div>
+            </form>
+            
+            <div id="registerMessage" class="message"></div>
+        </div>
+    </div>
+    
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Validación de contraseña en tiempo real
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            const strengthDiv = document.getElementById('passwordStrength');
+            let strength = 0;
+            let message = '';
+            let color = '';
+            
+            if (password.length === 0) {
+                strengthDiv.innerHTML = '';
+                return;
+            }
+            
+            if (password.length >= 6) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            
+            switch(strength) {
+                case 1:
+                    message = 'Débil';
+                    color = '#e53e3e';
+                    break;
+                case 2:
+                    message = 'Regular';
+                    color = '#ed8936';
+                    break;
+                case 3:
+                    message = 'Buena';
+                    color = '#38a169';
+                    break;
+                case 4:
+                    message = 'Excelente';
+                    color = '#276749';
+                    break;
+            }
+            
+            strengthDiv.innerHTML = `<span style="color:${color}">${message}</span>`;
+        });
+        
+        // Validar coincidencia de contraseñas
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            const confirm = this.value;
+            const matchDiv = document.getElementById('passwordMatch');
+            
+            if (confirm.length === 0) {
+                matchDiv.innerHTML = '';
+                return;
+            }
+            
+            if (password === confirm) {
+                matchDiv.innerHTML = '<span style="color:#38a169">✓ Coinciden</span>';
+            } else {
+                matchDiv.innerHTML = '<span style="color:#e53e3e">✗ No coinciden</span>';
+            }
+        });
+        
+        // Formulario de registro
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const nombre = document.getElementById('nombre').value.trim();
+            const telefono = document.getElementById('telefono').value.trim();
+            const cedula = document.getElementById('cedula').value.trim();
+            const correo = document.getElementById('correo').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const terms = document.getElementById('terms').checked;
+            const registerButton = document.getElementById('registerButton');
+            const messageDiv = document.getElementById('registerMessage');
+            
+            // Validaciones
+            if (!nombre || !telefono || !cedula || !correo || !password || !confirmPassword) {
+                showMessage('Por favor completa todos los campos', 'error');
+                return;
+            }
+            
+            if (!terms) {
+                showMessage('Debes aceptar los términos y condiciones', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showMessage('La contraseña debe tener al menos 6 caracteres', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showMessage('Las contraseñas no coinciden', 'error');
+                return;
+            }
+            
+            if (telefono.length < 10) {
+                showMessage('El teléfono debe tener al menos 10 dígitos', 'error');
+                return;
+            }
+            
+            if (!correo.includes('@')) {
+                showMessage('Ingresa un correo electrónico válido', 'error');
+                return;
+            }
+            
+            // Cambiar estado del botón
+            registerButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
+            registerButton.disabled = true;
+            
+            // Limpiar mensajes anteriores
+            messageDiv.innerHTML = '';
+            
+            try {
+                // Verificar si el teléfono ya existe
+                const usuarioExistente = await window.obtenerUno(
+                    `SELECT id FROM users WHERE telefono = '${telefono}' OR cedula = '${cedula}'`
+                );
+                
+                if (usuarioExistente) {
+                    showMessage('El teléfono o cédula ya están registrados', 'error');
+                    resetButton();
+                    return;
+                }
+                
+                // Crear hash de contraseña (en producción usar bcrypt)
+                const passwordHash = `$2a$10$${btoa(password).substring(0, 50)}...`;
+                
+                // Insertar nuevo usuario
+                const resultado = await window.ejecutarComando(`
+                    INSERT INTO users (nombre, telefono, cedula, correo, password_hash, puntos, role)
+                    VALUES (
+                        '${nombre}',
+                        '${telefono}',
+                        '${cedula}',
+                        '${correo}',
+                        '${passwordHash}',
+                        0,
+                        'user'
+                    )
+                `);
+                
+                if (resultado.success) {
+                    // Obtener el usuario recién creado
+                    const nuevoUsuario = await window.obtenerUno(
+                        `SELECT id, nombre, telefono, puntos, role FROM users WHERE telefono = '${telefono}'`
+                    );
+                    
+                    if (nuevoUsuario) {
+                        // Guardar en localStorage
+                        const usuarioSesion = {
+                            id: nuevoUsuario.id,
+                            nombre: nuevoUsuario.nombre,
+                            telefono: nuevoUsuario.telefono,
+                            puntos: nuevoUsuario.puntos,
+                            role: nuevoUsuario.role,
+                            loggedIn: true,
+                            timestamp: new Date().getTime()
+                        };
+                        
+                        localStorage.setItem('usuarioRifa', JSON.stringify(usuarioSesion));
+                        
+                        showMessage('¡Registro exitoso! Redirigiendo...', 'success');
+                        
+                        // Redirigir al dashboard
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 1500);
+                    } else {
+                        showMessage('Usuario registrado pero error al iniciar sesión', 'error');
+                        resetButton();
+                    }
+                } else {
+                    showMessage('Error al registrar usuario: ' + resultado.error, 'error');
+                    resetButton();
+                }
+                
+            } catch (error) {
+                console.error('Error en registro:', error);
+                showMessage('Error del servidor. Intenta nuevamente.', 'error');
+                resetButton();
+            }
+        });
+        
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('registerMessage');
+            messageDiv.innerHTML = `
+                <div class="alert alert-${type}">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    ${text}
+                </div>
+            `;
+        }
+        
+        function resetButton() {
+            const registerButton = document.getElementById('registerButton');
+            registerButton.innerHTML = '<i class="fas fa-user-plus"></i> Crear Cuenta';
+            registerButton.disabled = false;
+        }
+    </script>
+</body>
+</html>

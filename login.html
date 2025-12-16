@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Rifa 33</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-box">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <i class="fas fa-ticket-alt"></i>
+                    <h1>Rifa 33</h1>
+                </div>
+                <h2>Iniciar Sesión</h2>
+                <p>Ingresa tus credenciales para acceder al sistema</p>
+            </div>
+            
+            <form id="loginForm" class="auth-form">
+                <div class="form-group">
+                    <label for="telefono">
+                        <i class="fas fa-phone"></i> Teléfono
+                    </label>
+                    <input type="text" id="telefono" placeholder="04141234567" required>
+                    <div class="form-hint">Ej: 04141234567</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fas fa-lock"></i> Contraseña
+                    </label>
+                    <input type="password" id="password" placeholder="Tu contraseña" required>
+                    <div class="password-toggle">
+                        <i class="fas fa-eye" id="togglePassword"></i>
+                    </div>
+                </div>
+                
+                <div class="form-options">
+                    <label class="checkbox">
+                        <input type="checkbox" id="remember">
+                        <span>Recordar sesión</span>
+                    </label>
+                    <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+                </div>
+                
+                <button type="submit" class="btn-primary btn-block" id="loginButton">
+                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                </button>
+                
+                <div class="auth-divider">
+                    <span>o</span>
+                </div>
+                
+                <div class="auth-footer">
+                    <p>¿No tienes cuenta? <a href="register.html">Regístrate aquí</a></p>
+                    <a href="index.html" class="back-home">
+                        <i class="fas fa-arrow-left"></i> Volver al inicio
+                    </a>
+                </div>
+            </form>
+            
+            <div id="loginMessage" class="message"></div>
+            
+            <div class="demo-credentials">
+                <h4><i class="fas fa-key"></i> Credenciales de Prueba</h4>
+                <p><strong>Admin:</strong> 04141234567 / admin123</p>
+                <p><strong>Usuario:</strong> 04140000001 / usuario123</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Mostrar/ocultar contraseña
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
+        });
+        
+        // Formulario de login
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const telefono = document.getElementById('telefono').value.trim();
+            const password = document.getElementById('password').value;
+            const loginButton = document.getElementById('loginButton');
+            const messageDiv = document.getElementById('loginMessage');
+            
+            // Validación básica
+            if (!telefono || !password) {
+                showMessage('Por favor completa todos los campos', 'error');
+                return;
+            }
+            
+            if (telefono.length < 10) {
+                showMessage('El teléfono debe tener al menos 10 dígitos', 'error');
+                return;
+            }
+            
+            // Cambiar estado del botón
+            loginButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+            loginButton.disabled = true;
+            
+            // Limpiar mensajes anteriores
+            messageDiv.innerHTML = '';
+            
+            try {
+                // Buscar usuario en la base de datos
+                const resultado = await window.obtenerDatos(
+                    `SELECT id, nombre, telefono, puntos, role, password_hash FROM users WHERE telefono = '${telefono}'`
+                );
+                
+                if (!resultado || resultado.length === 0) {
+                    showMessage('Usuario no encontrado', 'error');
+                    resetButton();
+                    return;
+                }
+                
+                const usuario = resultado[0];
+                
+                // En un sistema real, aquí verificarías el hash de la contraseña
+                // Por ahora hacemos verificación simple para desarrollo
+                const contraseñasValidas = {
+                    'admin123': true,
+                    'usuario123': true,
+                    'password': true
+                };
+                
+                if (contraseñasValidas[password]) {
+                    // Guardar usuario en localStorage
+                    const usuarioSesion = {
+                        id: usuario.id,
+                        nombre: usuario.nombre,
+                        telefono: usuario.telefono,
+                        puntos: usuario.puntos,
+                        role: usuario.role,
+                        loggedIn: true,
+                        timestamp: new Date().getTime()
+                    };
+                    
+                    localStorage.setItem('usuarioRifa', JSON.stringify(usuarioSesion));
+                    
+                    showMessage('¡Inicio de sesión exitoso!', 'success');
+                    
+                    // Redirigir según rol
+                    setTimeout(() => {
+                        if (usuario.role === 'admin') {
+                            window.location.href = 'admin.html';
+                        } else {
+                            window.location.href = 'dashboard.html';
+                        }
+                    }, 1000);
+                    
+                } else {
+                    showMessage('Contraseña incorrecta', 'error');
+                    resetButton();
+                }
+                
+            } catch (error) {
+                console.error('Error en login:', error);
+                showMessage('Error del servidor. Intenta nuevamente.', 'error');
+                resetButton();
+            }
+        });
+        
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('loginMessage');
+            messageDiv.innerHTML = `
+                <div class="alert alert-${type}">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    ${text}
+                </div>
+            `;
+        }
+        
+        function resetButton() {
+            const loginButton = document.getElementById('loginButton');
+            loginButton.innerHTML = '<i class="fas fa-sign-in-alt"></i> Iniciar Sesión';
+            loginButton.disabled = false;
+        }
+        
+        // Cargar teléfono guardado si existe
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedPhone = localStorage.getItem('savedPhone');
+            if (savedPhone) {
+                document.getElementById('telefono').value = savedPhone;
+                document.getElementById('remember').checked = true;
+            }
+        });
+    </script>
+</body>
+</html>
