@@ -1,21 +1,12 @@
-﻿export async function onRequest(context) {
-  const { env } = context;
-  
+export async function onRequestGet(context) {
   try {
-    const db = env.DB;
+    const db = context.env.DB;
     
-    // Obtener tickets vendidos - JOIN con ordenes para obtener información del comprador
     const tickets = await db.prepare(`
-      SELECT 
-        t.numero,
-        o.nombre,
-        o.telefono,
-        o.fecha_creacion
+      SELECT t.numero, o.cliente_nombre as nombre, o.cliente_telefono as telefono, o.fecha_creacion
       FROM tickets t
-      LEFT JOIN ordenes o ON t.orden_id = o.id
-      WHERE t.estado = 'vendido' 
-      OR t.nombre IS NOT NULL
-      OR t.usuario_id IS NOT NULL
+      JOIN ordenes o ON t.orden_id = o.id  -- ✅ CORREGIDO: orden_id
+      WHERE t.vendido = 1
       ORDER BY o.fecha_creacion DESC
     `).all();
 

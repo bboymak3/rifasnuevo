@@ -1,8 +1,6 @@
 ﻿export async function onRequest(context) {
   const { request, env } = context;
   
-  console.log('=== SOLICITAR RECARGA ===');
-  
   try {
     if (request.method !== 'POST') {
       return new Response(JSON.stringify({ success: false, error: 'Método no permitido' }), {
@@ -11,15 +9,15 @@
       });
     }
 
-    const body = await request.json();
-    console.log('📦 Datos recibidos:', body);
+    const data = await request.json();
+    const { monto, metodoPago, referenciaPago, userId } = data;
     
-    const { monto, metodoPago, referenciaPago, userId } = body;
+    console.log('Solicitar recarga:', { monto, metodoPago, referenciaPago, userId });
     
-    if (!monto || !metodoPago || !userId) {
+    if (!monto || !metodoPago || !referenciaPago || !userId) {
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Faltan parámetros: monto, metodoPago y userId' 
+        error: 'Faltan parámetros: monto, metodoPago, referenciaPago, userId' 
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
@@ -28,9 +26,9 @@
 
     const db = env.DB;
     
-    // 1. Verificar usuario
+    // Verificar que el usuario existe
     const usuario = await db.prepare(
-      'SELECT id, nombre FROM usuarios WHERE id = ?'
+      'SELECT id FROM usuarios WHERE id = ?'
     ).bind(userId).first();
 
     if (!usuario) {
@@ -43,45 +41,31 @@
       });
     }
 
-    // 2. Calcular créditos solicitados
+    // Obtener tasa actual
     const tasa = await db.prepare(
       'SELECT valor FROM config_tasas WHERE tipo = ?'
     ).bind('bs_creditos').first();
 
     const tasaBsCreditos = tasa ? tasa.valor : 250;
-    const creditosSolicitados = Math.floor((monto * 100) / tasaBsCreditos);
     
-    console.log(`💰 Solicitud: ${monto} Bs → ${creditosSolicitados} créditos`);
+    // Calcular créditos
+    const creditosRecibir = Math.floor((monto * 100) / tasaBsCreditos);
+    
+    console.log('Calculando créditos:', { monto, tasaBsCreditos, creditosRecibir });
 
-    // 3. Crear solicitud de recarga
-    const resultado = await db.prepare(
-      `INSERT INTO recargas (
-        usuario_id, monto, creditos_solicitados, 
-        metodo_pago, referencia_pago, estado
-      ) VALUES (?, ?, ?, ?, ?, 'pendiente')`
-    ).bind(
-      userId,
-      monto,
-      creditosSolicitados,
-      metodoPago,
-      referenciaPago || '',
-      'pendiente'
-    ).run();
+    // Insertar solicitud
+    const result = await db.prepare(
+      'INSERT INTO recargas (usuario_id, monto, metodo_pago, referencia_pago, estado) VALUES (?, ?, ?, ?, ?)'
+    ).bind(userId, monto, metodoPago, referenciaPago, 'pendiente').run();
 
-    const recargaId = resultado.meta.last_row_id;
-    console.log(`✅ Solicitud creada ID: ${recargaId}`);
-
+    console.log('Recarga insertada, ID:', result.meta?.last_row_id);
+    
     return new Response(JSON.stringify({
       success: true,
-      message: 'Solicitud de recarga registrada correctamente',
-      data: {
-        id: recargaId,
-        usuario: usuario.nombre,
-        monto: monto,
-        creditosSolicitados: creditosSolicitados,
-        metodoPago: metodoPago,
-        estado: 'pendiente',
-        fechaSolicitud: new Date().toISOString()
+      data: { 
+        id: result.meta?.last_row_id,
+        creditosSolicitados: creditosRecibir,
+        tasaAplicada: tasaBsCreditos
       }
     }), {
       headers: { 
@@ -91,7 +75,7 @@
     });
 
   } catch (error) {
-    console.error('Error solicitando recarga:', error);
+    console.error('Error en solicitar-recarga:', error);
     return new Response(JSON.stringify({ 
       success: false, 
       error: 'Error interno: ' + error.message 

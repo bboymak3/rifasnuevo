@@ -8,10 +8,10 @@
   <style>
     .resumen-ticket { background: #f8f9fa; border-radius: 10px; padding: 20px; }
     .ticket-badge { background: #28a745; color: white; padding: 8px 12px; border-radius: 5px; display: inline-block; margin: 5px; font-weight: bold; }
-    .creditos-info { background: #e8f4fd; border-left: 4px solid #007bff; padding: 15px; margin: 15px 0; border-radius: 5px; }
     .metodo-pago { border: 2px solid #e9ecef; border-radius: 10px; padding: 15px; margin: 10px 0; cursor: pointer; transition: all 0.3s; }
     .metodo-pago:hover { border-color: #007bff; }
     .metodo-pago.selected { border-color: #007bff; background: #f8f9ff; }
+    .info-pago { display: none; margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 5px; }
   </style>
 </head>
 <body class="bg-light">
@@ -31,14 +31,6 @@
           </div>
           <div class="card-body">
             <form id="formCompra">
-              <!-- Campo oculto para userId (deberías obtenerlo de la sesión) -->
-              <input type="hidden" id="userId" value="5"> <!-- Cambia esto por el ID real del usuario -->
-              
-              <div class="creditos-info" id="creditosInfo">
-                <h6>💳 Créditos Disponibles</h6>
-                <p>Cargando información de créditos...</p>
-              </div>
-              
               <div class="row">
                 <div class="col-md-6">
                   <div class="mb-3">
@@ -58,40 +50,33 @@
                 <input type="email" class="form-control" id="email">
               </div>
 
-              <h5 class="mt-4">💳 Método de Pago</h5>
+              <h5 class="mt-4">💳 Método de Pago *</h5>
               
-              <div class="metodo-pago selected">
+              <div class="metodo-pago" onclick="seleccionarMetodo('pago_movil')">
                 <div class="form-check">
-                  <input class="form-check-input" type="radio" name="metodoPago" id="pago_creditos" value="creditos" checked>
-                  <label class="form-check-label fw-bold" for="pago_creditos">
-                    ⭐ Pagar con Créditos
+                  <input class="form-check-input" type="radio" name="metodoPago" id="pago_movil" value="pago_movil">
+                  <label class="form-check-label fw-bold" for="pago_movil">
+                    📱 Pago Móvil
                   </label>
                 </div>
-                <div class="mt-2">
-                  <p class="mb-1"><small>Los créditos se descontarán automáticamente de tu cuenta.</small></p>
-                  <p class="mb-0 text-success"><strong>✅ Pago instantáneo - Sin verificación manual</strong></p>
-                </div>
-              </div>
-
-              <div class="alert alert-info mt-3">
-                <h6>📋 Resumen de Pago con Créditos:</h6>
-                <div class="row">
-                  <div class="col-6">
-                    <small>Tickets seleccionados:</small>
-                    <div id="resumenCantidadCredito">0</div>
+                <div class="info-pago" id="infoPago_movil">
+                  <div class="alert alert-info">
+                    <strong>Datos para Pago Móvil:</strong><br>
+                    Teléfono: 0412-121212<br>
+                    Nombre: Juan Carlos<br>
+                    Banco: Banco de Venezuela
                   </div>
-                  <div class="col-6">
-                    <small>Total en créditos:</small>
-                    <div class="fw-bold" id="resumenTotalCredito">0</div>
+                  <div class="mb-3">
+                    <label class="form-label">Número de referencia *</label>
+                    <input type="text" class="form-control" id="comprobantePagoMovil" placeholder="Ej: REF-123456">
                   </div>
                 </div>
               </div>
 
               <div class="mt-4">
-                <button type="submit" class="btn btn-success btn-lg w-100" id="btnConfirmar">
-                  ✅ Confirmar Compra con Créditos
+                <button type="submit" class="btn btn-success btn-lg w-100">
+                  ✅ Confirmar y Procesar Pago
                 </button>
-                <div id="errorMensaje" class="alert alert-danger mt-2" style="display: none;"></div>
               </div>
             </form>
           </div>
@@ -109,20 +94,20 @@
             <strong>Cantidad:</strong> <span id="resumenCantidad">0</span> tickets
           </div>
           <div class="mb-2">
-            <strong>Precio unitario:</strong> <span id="precioUnitario">100 créditos</span>
+            <strong>Precio unitario:</strong> Bs. 499.00
           </div>
           <div class="mb-3">
             <strong>Total a pagar:</strong> 
-            <h4 class="text-success"><span id="resumenTotal">0</span> créditos</h4>
+            <h4 class="text-success">Bs. <span id="resumenTotal">0.00</span></h4>
           </div>
         </div>
 
         <div class="alert alert-warning mt-3">
           <small>
             ⚠️ <strong>Importante:</strong><br>
-            • La compra se procesa instantáneamente con tus créditos<br>
-            • Los tickets se asignan automáticamente a tu cuenta<br>
-            • Puedes ver tus tickets en "Mis Tickets"
+            • Tu compra se confirmará cuando verifiquemos el pago<br>
+            • Guarda tu comprobante<br>
+            • Los tickets quedarán reservados por 24 horas
           </small>
         </div>
       </div>
@@ -130,152 +115,34 @@
   </div>
 
   <script>
-    // Variables globales
-    let ticketsSeleccionados = [];
-    let precioPorTicket = 100;
-    let creditosUsuario = 0;
-    let userId = 5; // Cambiar por el ID real del usuario logueado
-
-    // Obtener tickets de la URL
-    function obtenerTicketsDeURL() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const ticketsParam = urlParams.get('tickets');
+    function seleccionarMetodo(metodo) {
+      // Ocultar todos los info-pago primero
+      document.querySelectorAll('.info-pago').forEach(function(element) {
+        element.style.display = 'none';
+      });
       
-      if (ticketsParam) {
-        ticketsSeleccionados = ticketsParam.split(',').map(t => t.trim());
-        actualizarResumen();
-        cargarInfoCreditos();
-      } else {
-        // Si no hay tickets en la URL, redirigir
-        window.location.href = '/';
-      }
+      // Remover la clase selected de todos los métodos
+      document.querySelectorAll('.metodo-pago').forEach(function(element) {
+        element.classList.remove('selected');
+      });
+      
+      // Marcar el radio button correspondiente
+      document.getElementById(metodo).checked = true;
+      
+      // Mostrar el info-pago del método seleccionado
+      const infoId = 'info' + metodo.charAt(0).toUpperCase() + metodo.slice(1);
+      document.getElementById(infoId).style.display = 'block';
+      
+      // Agregar clase selected al método seleccionado
+      event.currentTarget.classList.add('selected');
     }
 
-    // Cargar información de créditos
-    async function cargarInfoCreditos() {
-      try {
-        const response = await fetch('/api/verificar-creditos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: userId })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          creditosUsuario = data.data.creditosDisponibles;
-          precioPorTicket = data.data.precioPorTicket;
-          
-          // Actualizar UI
-          document.getElementById('creditosInfo').innerHTML = `
-            <h6>💳 Créditos Disponibles</h6>
-            <p><strong>${creditosUsuario} créditos</strong> disponibles</p>
-            <p class="mb-0"><small>Precio por ticket: ${precioPorTicket} créditos</small></p>
-          `;
-          
-          document.getElementById('precioUnitario').textContent = `${precioPorTicket} créditos`;
-          actualizarResumen();
-        }
-      } catch (error) {
-        console.error('Error cargando créditos:', error);
-      }
-    }
-
-    // Actualizar resumen
-    function actualizarResumen() {
-      const cantidad = ticketsSeleccionados.length;
-      const totalCreditos = cantidad * precioPorTicket;
-      
-      // Actualizar UI
-      document.getElementById('resumenCantidad').textContent = cantidad;
-      document.getElementById('resumenTotal').textContent = totalCreditos;
-      
-      document.getElementById('resumenCantidadCredito').textContent = `${cantidad} tickets`;
-      document.getElementById('resumenTotalCredito').textContent = `${totalCreditos} créditos`;
-      
-      // Actualizar lista de tickets
-      const ticketsHTML = ticketsSeleccionados.map(ticket => 
-        `<span class="ticket-badge">${ticket}</span>`
-      ).join('');
-      document.getElementById('resumenTickets').innerHTML = ticketsHTML;
-      
-      // Verificar si tiene créditos suficientes
-      const btnConfirmar = document.getElementById('btnConfirmar');
-      if (creditosUsuario < totalCreditos) {
-        btnConfirmar.disabled = true;
-        btnConfirmar.innerHTML = '❌ Créditos Insuficientes';
-        document.getElementById('errorMensaje').style.display = 'block';
-        document.getElementById('errorMensaje').innerHTML = 
-          `No tienes suficientes créditos. Necesitas ${totalCreditos} créditos, pero solo tienes ${creditosUsuario}.`;
-      } else {
-        btnConfirmar.disabled = false;
-        btnConfirmar.innerHTML = '✅ Confirmar Compra con Créditos';
-        document.getElementById('errorMensaje').style.display = 'none';
-      }
-    }
-
-    // Procesar compra
-    async function procesarCompra(event) {
-      event.preventDefault();
-      
-      const nombre = document.getElementById('nombre').value;
-      const telefono = document.getElementById('telefono').value;
-      const email = document.getElementById('email').value;
-      const cantidad = ticketsSeleccionados.length;
-      const totalCreditos = cantidad * precioPorTicket;
-      
-      if (!nombre || !telefono) {
-        alert('Por favor completa todos los campos obligatorios');
-        return;
-      }
-      
-      if (creditosUsuario < totalCreditos) {
-        alert('No tienes suficientes créditos para realizar esta compra');
-        return;
-      }
-      
-      // Deshabilitar botón para evitar doble clic
-      const btnConfirmar = document.getElementById('btnConfirmar');
-      btnConfirmar.disabled = true;
-      btnConfirmar.innerHTML = '⏳ Procesando compra...';
-      
-      try {
-        const response = await fetch('/api/comprar-tickets', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: userId,
-            nombre: nombre,
-            telefono: telefono,
-            email: email,
-            tickets: ticketsSeleccionados.join(','),
-            totalCreditos: totalCreditos
-          })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          // Redirigir a página de éxito
-          window.location.href = `/compra-exitosa.html?orden=${data.data.ordenId}&tickets=${ticketsSeleccionados.join(',')}`;
-        } else {
-          alert('Error: ' + data.error);
-          btnConfirmar.disabled = false;
-          btnConfirmar.innerHTML = '✅ Confirmar Compra con Créditos';
-        }
-      } catch (error) {
-        console.error('Error procesando compra:', error);
-        alert('Error al procesar la compra. Por favor intenta nuevamente.');
-        btnConfirmar.disabled = false;
-        btnConfirmar.innerHTML = '✅ Confirmar Compra con Créditos';
-      }
-    }
-
-    // Event Listeners
+    // Mostrar automáticamente el método de pago móvil al cargar la página
     document.addEventListener('DOMContentLoaded', function() {
-      obtenerTicketsDeURL();
-      document.getElementById('formCompra').addEventListener('submit', procesarCompra);
+      seleccionarMetodo('pago_movil');
     });
   </script>
+
+  <script src="/js/compra.js"></script>
 </body>
 </html>

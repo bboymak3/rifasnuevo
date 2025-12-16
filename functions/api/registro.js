@@ -109,75 +109,21 @@
     console.log('Insertando nuevo usuario...');
     let result;
     try {
-      // Hash the password (SHA-256 with salt) before storing in password_hash
-      const salt = Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b => b.toString(16).padStart(2,'0')).join('');
-      const encoder = new TextEncoder();
-      const dataToHash = encoder.encode(salt + password);
-      const digest = await crypto.subtle.digest('SHA-256', dataToHash);
-      const hashHex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
-      const storedHash = `${salt}$${hashHex}`;
-
-      // Try a robust insertion sequence that works regardless of whether the legacy
-      // `password` column exists or not. Some D1 instances may not report PRAGMA reliably,
-      // so we attempt an INSERT that includes `password` first (most compatible), and if
-      // the DB complains that the column doesn't exist, we retry without it.
-
-      const insertWithPasswordSql = 'INSERT INTO usuarios (nombre, email, telefono, password, password_hash, creditos) VALUES (?, ?, ?, ?, ?, 100)';
-      const insertWithoutPasswordSql = 'INSERT INTO usuarios (nombre, email, telefono, password_hash, creditos) VALUES (?, ?, ?, ?, 100)';
-
-      let triedWithout = false;
-      try {
-        console.log('Intentando INSERT incluyendo `password`...');
-        result = await db.prepare(insertWithPasswordSql).bind(nombre, email, telefono || '', storedHash, storedHash).run();
-        console.log('INSERT con password exitoso:', result);
-      } catch (firstErr) {
-        console.log('ERROR en primer INSERT (con password):', firstErr && firstErr.message ? firstErr.message : firstErr);
-        // If the error indicates the column doesn't exist, try without the column.
-        const msg = firstErr && firstErr.message ? firstErr.message.toLowerCase() : '';
-        if (msg.includes('no such column') || msg.includes('no such table') || msg.includes('unknown column')) {
-          console.log('La columna `password` parece no existir, intentando INSERT sin `password`...');
-          triedWithout = true;
-          result = await db.prepare(insertWithoutPasswordSql).bind(nombre, email, telefono || '', storedHash).run();
-          console.log('INSERT sin password exitoso:', result);
-        } else {
-          // Re-throw to be handled by outer catch/fallback logic
-          throw firstErr;
-        }
-      }
-
+      result = await db.prepare(
+        'INSERT INTO usuarios (nombre, email, telefono, password_hash, creditos) VALUES (?, ?, ?, ?, 100)'
+      ).bind(nombre, email, telefono || '', password).run();
       console.log('INSERT exitoso:', result);
-      console.log('Last row ID:', result.meta?.last_row_id || result.lastInsertId);
+      console.log('Last row ID:', result.meta?.last_row_id);
     } catch (insertError) {
-      console.log('ERROR en INSERT:', insertError && insertError.message ? insertError.message : insertError);
-      console.log('Full insertError:', insertError);
-
-      // Intentar un fallback una vez para cubrir casos donde la columna `password` existe pero
-      // no se pudo insertar inicialmente (por ejemplo, por condiciones extrañas en D1).
-      try {
-        console.log('Intentando fallback incluyendo `password` en INSERT (final retry)...');
-        const salt2 = Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b => b.toString(16).padStart(2,'0')).join('');
-        const encoder2 = new TextEncoder();
-        const dataToHash2 = encoder2.encode(salt2 + password);
-        const digest2 = await crypto.subtle.digest('SHA-256', dataToHash2);
-        const hashHex2 = Array.from(new Uint8Array(digest2)).map(b => b.toString(16).padStart(2,'0')).join('');
-        const storedHash2 = `${salt2}$${hashHex2}`;
-
-        result = await db.prepare(
-          'INSERT INTO usuarios (nombre, email, telefono, password, password_hash, creditos) VALUES (?, ?, ?, ?, ?, 100)'
-        ).bind(nombre, email, telefono || '', storedHash2, storedHash2).run();
-
-        console.log('INSERT fallback exitoso (final retry):', result);
-      } catch (fallbackErr) {
-        console.log('ERROR en INSERT fallback (final retry):', fallbackErr && fallbackErr.message ? fallbackErr.message : fallbackErr);
-        console.log('Full fallbackErr:', fallbackErr);
-        return new Response(JSON.stringify({ 
-          success: false, 
-          error: 'Error insertando usuario (fallback): ' + (fallbackErr && fallbackErr.message ? fallbackErr.message : String(fallbackErr))
-        }), { 
-          status: 500, 
-          headers: { 'Content-Type': 'application/json' } 
-        });
-      }
+      console.log('ERROR en INSERT:', insertError.message);
+      console.log('Stack:', insertError.stack);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Error insertando usuario: ' + insertError.message 
+      }), { 
+        status: 500, 
+        headers: { 'Content-Type': 'application/json' } 
+      });
     }
 
     // 8. Éxito
