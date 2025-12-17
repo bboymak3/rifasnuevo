@@ -119,4 +119,3 @@ export async function onRequest(context) {
     status: 404, headers: { 'Content-Type': 'application/json' }
   });
 }
-'@ | Out-File -FilePath functions\api\admin.js -Encoding UTF8

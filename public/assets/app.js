@@ -599,4 +599,3 @@ window.mostrarAjustePuntos = mostrarAjustePuntos;
 window.aplicarAjustePuntos = aplicarAjustePuntos;
 window.cambiarTab = cambiarTab;
 window.showAlert = showAlert;
-'@ | Out-File -FilePath public\assets\app.js -Encoding UTF8

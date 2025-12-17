@@ -1,4 +1,4 @@
-// Endpoints de autenticacion 
+﻿// Endpoints de autenticacion 
 // /functions/api/auth.js
 
 // Función para generar JWT simple
