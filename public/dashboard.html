@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Rifas Nuevo</title>
+    <link rel="stylesheet" href="/assets/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="main-header">
+            <div class="logo">
+                <i class="fas fa-ticket-alt"></i>
+                <span>Rifas Nuevo</span>
+            </div>
+            <div class="user-menu">
+                <div class="user-info">
+                    <span id="userNombre">Cargando...</span>
+                    <div class="puntos-display">
+                        <i class="fas fa-coins"></i>
+                        <span id="userPuntos">0</span> puntos
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="/admin.html" class="btn btn-secondary btn-sm" title="Panel de administración">
+                        <i class="fas fa-cog"></i> Admin
+                    </a>
+                    <button onclick="logout()" class="btn btn-danger btn-sm">
+                        <i class="fas fa-sign-out-alt"></i> Salir
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <main class="dashboard-main">
+            <div id="alert" class="alert hidden"></div>
+            
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-coins"></i></div>
+                    <div class="stat-value" id="puntosStat">0</div>
+                    <div class="stat-label">Puntos Disponibles</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-ticket-alt"></i></div>
+                    <div class="stat-value" id="misNumerosStat">0</div>
+                    <div class="stat-label">Mis Números</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="stat-value">10</div>
+                    <div class="stat-label">Puntos por Número</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                    <div class="stat-value" id="disponiblesStat">100</div>
+                    <div class="stat-label">Disponibles</div>
+                </div>
+            </div>
+            
+            <div class="instructions recarga-info">
+                <h3><i class="fab fa-whatsapp"></i> ¿Necesitas más puntos?</h3>
+                <p>Envía el comprobante de pago por WhatsApp al <strong>+57 XXX-XXX-XXXX</strong></p>
+                <p class="tarifas">
+                    <i class="fas fa-tag"></i> 
+                    <strong>Tarifas:</strong> $1.000 = 10 puntos (1 número) | $10.000 = 100 puntos (10 números)
+                </p>
+            </div>
+            
+            <section class="section">
+                <h2><i class="fas fa-star"></i> Mis Números Comprados</h2>
+                <div id="misNumerosList" class="mis-numeros">
+                    Cargando tus números...
+                </div>
+            </section>
+            
+            <section class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-grid"></i> Selecciona un Número (1-100)</h2>
+                    <div class="leyenda">
+                        <div class="leyenda-item">
+                            <div class="color-box disponible"></div>
+                            <span>Disponible</span>
+                        </div>
+                        <div class="leyenda-item">
+                            <div class="color-box vendido"></div>
+                            <span>Vendido</span>
+                        </div>
+                        <div class="leyenda-item">
+                            <div class="color-box propio"></div>
+                            <span>Mi número</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="numerosGrid" class="numeros-grid">
+                    <!-- Los números se cargarán aquí -->
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Modal de confirmación -->
+    <div id="compraModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-shopping-cart"></i> Confirmar Compra</h3>
+                <button class="close-modal" onclick="cerrarModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="numero-grande">
+                    #<span id="modalNumero">00</span>
+                </div>
+                <div class="compra-info">
+                    <div class="info-item">
+                        <span>Puntos requeridos:</span>
+                        <span class="valor-rojo" id="modalPuntosRequeridos">10</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Tus puntos:</span>
+                        <span class="valor-verde" id="modalPuntosDisponibles">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Puntos después:</span>
+                        <span class="valor-azul" id="modalPuntosRestantes">0</span>
+                    </div>
+                </div>
+                <p class="modal-nota">
+                    <i class="fas fa-info-circle"></i>
+                    Cada número cuesta 10 puntos. No hay reembolsos.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button onclick="confirmarCompra()" class="btn btn-primary">
+                    <i class="fas fa-check"></i> Confirmar Compra
+                </button>
+                <button onclick="cerrarModal()" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/assets/app.js"></script>
+    <script>
+        function cerrarModal() {
+            document.getElementById('compraModal').classList.add('hidden');
+        }
+        
+        function mostrarAlerta(mensaje, tipo = 'info') {
+            const alertDiv = document.getElementById('alert');
+            alertDiv.textContent = mensaje;
+            alertDiv.className = `alert alert-${tipo}`;
+            alertDiv.classList.remove('hidden');
+            setTimeout(() => alertDiv.classList.add('hidden'), 5000);
+        }
+        
+        // Cerrar modal al hacer click fuera
+        window.onclick = function(event) {
+            const modal = document.getElementById('compraModal');
+            if (event.target === modal) {
+                cerrarModal();
+            }
+        };
+    </script>
+</body>
+</html>

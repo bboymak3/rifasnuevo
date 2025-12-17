@@ -1,5 +1,124 @@
 ﻿<!DOCTYPE html>
-<html>
-<head><title>Rifas</title></head>
-<body><h1>¡Funcionando!</h1></body>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rifas Nuevo - Login</title>
+    <link rel="stylesheet" href="/assets/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="auth-box">
+            <div class="logo-header">
+                <i class="fas fa-ticket-alt fa-2x"></i>
+                <h1>Rifas Nuevo</h1>
+                <p>Sistema de rifas con puntos</p>
+            </div>
+            
+            <div id="alert" class="alert hidden"></div>
+            
+            <div id="loginSection">
+                <h2><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email"><i class="fas fa-envelope"></i> Email</label>
+                        <input type="email" id="email" placeholder="tu@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password"><i class="fas fa-lock"></i> Contraseña</label>
+                        <input type="password" id="password" placeholder="Tu contraseña" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-sign-in-alt"></i> Ingresar
+                    </button>
+                </form>
+                
+                <div class="auth-footer">
+                    <p>¿No tienes cuenta? <a href="#" onclick="mostrarRegistro()">Regístrate aquí</a></p>
+                </div>
+            </div>
+            
+            <div id="registerSection" class="hidden">
+                <h2><i class="fas fa-user-plus"></i> Crear Cuenta</h2>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="regEmail"><i class="fas fa-envelope"></i> Email</label>
+                        <input type="email" id="regEmail" placeholder="tu@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regNombre"><i class="fas fa-user"></i> Nombre (opcional)</label>
+                        <input type="text" id="regNombre" placeholder="Tu nombre">
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword"><i class="fas fa-lock"></i> Contraseña</label>
+                        <input type="password" id="regPassword" placeholder="Mínimo 6 caracteres" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regConfirmPassword"><i class="fas fa-lock"></i> Confirmar Contraseña</label>
+                        <input type="password" id="regConfirmPassword" placeholder="Repite tu contraseña" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-check"></i> Registrarse
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-block" onclick="mostrarLogin()">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </button>
+                </form>
+            </div>
+            
+            <div class="instructions">
+                <h3><i class="fas fa-info-circle"></i> ¿Cómo funciona?</h3>
+                <ol>
+                    <li>Regístrate con tu email</li>
+                    <li>Recarga puntos enviando comprobante por WhatsApp</li>
+                    <li>Compra números del 1 al 100 (10 puntos cada uno)</li>
+                    <li>¡Participa y gana premios increíbles!</li>
+                </ol>
+                <p class="whatsapp-info">
+                    <i class="fab fa-whatsapp"></i> Para recargar: Envía comprobante al <strong>+57 XXX-XXX-XXXX</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/assets/app.js"></script>
+    <script>
+        function mostrarRegistro() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('registerSection').classList.remove('hidden');
+        }
+        
+        function mostrarLogin() {
+            document.getElementById('registerSection').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
+        }
+        
+        // Validar contraseñas coinciden
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const pass1 = document.getElementById('regPassword').value;
+            const pass2 = document.getElementById('regConfirmPassword').value;
+            
+            if (pass1 !== pass2) {
+                e.preventDefault();
+                mostrarAlerta('Las contraseñas no coinciden', 'error');
+                return false;
+            }
+            
+            if (pass1.length < 6) {
+                e.preventDefault();
+                mostrarAlerta('La contraseña debe tener al menos 6 caracteres', 'error');
+                return false;
+            }
+        });
+        
+        function mostrarAlerta(mensaje, tipo = 'info') {
+            const alertDiv = document.getElementById('alert');
+            alertDiv.textContent = mensaje;
+            alertDiv.className = `alert alert-${tipo}`;
+            alertDiv.classList.remove('hidden');
+            setTimeout(() => alertDiv.classList.add('hidden'), 5000);
+        }
+    </script>
+</body>
 </html>

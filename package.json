@@ -1,1 +1,14 @@
- 
+{
+  "name": "rifasnuevo",
+  "version": "1.0.0",
+  "description": "Sistema de rifas con puntos",
+  "main": "index.js",
+  "scripts": {
+    "dev": "wrangler pages dev ./public --local --port=3000",
+    "deploy": "wrangler pages deploy ./public",
+    "db:verify": "wrangler d1 execute rifasv2 --file=verify-db.js --remote"
+  },
+  "devDependencies": {
+    "wrangler": "^4.55.0"
+  }
+}
