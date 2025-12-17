@@ -7,9 +7,6 @@ binding = "DB"
 database_name = "rifasv2"
 database_id = "c9c7e308-6c71-49f9-8eff-7f80512d7dc0"
 
-[env.production]
-compatibility_date = "2025-12-16"
-
 [env.production.vars]
-JWT_SECRET = "tu_clave_secreta_jwt_cambiar_en_produccion"
-ADMIN_PASSWORD = "admin123" # Cambiar esto en producción
+JWT_SECRET = "cambiar_esta_clave_en_produccion_123456"
+ADMIN_PASSWORD = "admin123"
