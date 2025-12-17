@@ -1,5 +1,4 @@
-@'
-// /public/assets/app.js - Sistema completo de rifas
+﻿// /public/assets/app.js - Sistema completo de rifas
 const API_BASE = '/api';
 const PUNTOS_POR_NUMERO = 10;
 
