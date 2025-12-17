@@ -1,0 +1,12 @@
+{ 
+  "name": "rifa-puntos", 
+  "version": "1.0.0", 
+  "private": true, 
+  "scripts": { 
+    "dev": "wrangler dev", 
+    "deploy": "wrangler deploy", 
+    "build": "echo 'Build command placeholder'" 
+  }, 
+  "dependencies": {}, 
+  "devDependencies": {} 
+} 
