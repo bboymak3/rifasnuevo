@@ -1,12 +1,18 @@
-{ 
-  "name": "rifa-puntos", 
-  "version": "1.0.0", 
-  "private": true, 
-  "scripts": { 
-    "dev": "wrangler dev", 
-    "deploy": "wrangler deploy", 
-    "build": "echo 'Build command placeholder'" 
-  }, 
-  "dependencies": {}, 
-  "devDependencies": {} 
-} 
+{
+  "name": "rifa-puntos",
+  "version": "1.0.0",
+  "description": "Sistema de rifas con puntos",
+  "main": "index.js",
+  "scripts": {
+    "dev": "wrangler pages dev public --local",
+    "deploy": "wrangler pages deploy public",
+    "db:seed": "wrangler d1 execute rifasv2 --file=seed.sql --remote",
+    "db:query": "wrangler d1 execute rifasv2"
+  },
+  "dependencies": {
+    "cookie": "^0.6.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.55.0"
+  }
+}
