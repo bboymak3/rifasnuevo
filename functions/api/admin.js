@@ -1,5 +1,4 @@
-@'
-// /functions/api/admin.js
+﻿// /functions/api/admin.js
 export async function onRequest(context) {
   const { request, env } = context;
   const DB = env.DB;
