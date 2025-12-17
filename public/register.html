@@ -1,1 +1,111 @@
-<-- Registro de usuarios --> 
+@'
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Sistema de Rifas</title>
+    <link rel="stylesheet" href="/assets/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="auth-container">
+            <div style="text-align:center; margin-bottom:30px;">
+                <h1 style="color:#4CAF50;">
+                    <i class="fas fa-user-plus"></i> Crear Cuenta
+                </h1>
+                <p>Regístrate para participar en la rifa</p>
+            </div>
+            
+            <!-- Alertas -->
+            <div id="alertMessage" class="alert" style="display:none;"></div>
+            
+            <!-- Formulario Registro -->
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="email"><i class="fas fa-envelope"></i> Email *</label>
+                    <input type="email" id="email" placeholder="tu@email.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="nombre"><i class="fas fa-user"></i> Nombre (opcional)</label>
+                    <input type="text" id="nombre" placeholder="Tu nombre completo">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password"><i class="fas fa-lock"></i> Contraseña *</label>
+                    <input type="password" id="password" placeholder="Mínimo 6 caracteres" required>
+                    <small style="color:#666; font-size:12px;">La contraseña se almacena de forma segura</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword"><i class="fas fa-lock"></i> Confirmar Contraseña *</label>
+                    <input type="password" id="confirmPassword" placeholder="Repite tu contraseña" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width:100%; margin:20px 0;">
+                    <i class="fas fa-check"></i> Crear Cuenta
+                </button>
+                
+                <div style="text-align:center;">
+                    <p>¿Ya tienes cuenta? 
+                        <a href="/" style="color:#4CAF50; font-weight:bold;">
+                            <i class="fas fa-sign-in-alt"></i> Inicia Sesión
+                        </a>
+                    </p>
+                </div>
+            </form>
+            
+            <!-- Información importante -->
+            <div class="instructions">
+                <h4><i class="fas fa-shield-alt"></i> Seguridad y Privacidad</h4>
+                <ul>
+                    <li>Tu email solo se usa para identificarte</li>
+                    <li>Nunca compartimos tu información</li>
+                    <li>Los puntos son intransferibles</li>
+                    <li>Solo tú puedes comprar con tus puntos</li>
+                </ul>
+                
+                <h4 style="margin-top:20px;"><i class="fas fa-coins"></i> Sobre los Puntos</h4>
+                <ul>
+                    <li>Comienza con <strong>0 puntos</strong></li>
+                    <li>Cada número cuesta <strong>10 puntos</strong></li>
+                    <li>Recarga enviando comprobante por WhatsApp</li>
+                    <li>Los puntos NO expiran</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/assets/app.js"></script>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const nombre = document.getElementById('nombre').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Validaciones
+            if (password !== confirmPassword) {
+                showAlert('Las contraseñas no coinciden', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showAlert('La contraseña debe tener al menos 6 caracteres', 'error');
+                return;
+            }
+            
+            // Registrar usuario
+            const success = await register(email, nombre, password);
+            if (!success) {
+                showAlert('Error en el registro. Intenta con otro email.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
+'@ | Out-File -FilePath public\register.html -Encoding UTF8

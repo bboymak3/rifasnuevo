@@ -1,1 +1,196 @@
-<-- Panel de administracion --> 
+@'
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Sistema de Rifas</title>
+    <link rel="stylesheet" href="/assets/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-crown"></i> Panel de Administración
+            </div>
+            <div class="user-info">
+                <a href="/dashboard.html" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                </a>
+                <button onclick="logout()" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
+        </header>
+        
+        <div id="adminLogin" class="auth-container">
+            <h2><i class="fas fa-lock"></i> Acceso Administrador</h2>
+            <p class="instructions">
+                Este panel es solo para administradores autorizados.
+                Para recargar puntos, los usuarios deben enviar comprobante por WhatsApp.
+            </p>
+            
+            <div class="form-group">
+                <label for="adminPassword">
+                    <i class="fas fa-key"></i> Contraseña de Administrador
+                </label>
+                <input type="password" id="adminPassword" placeholder="Ingresa la contraseña">
+            </div>
+            
+            <button onclick="loginAdmin()" class="btn btn-primary" style="width:100%;">
+                <i class="fas fa-sign-in-alt"></i> Ingresar al Panel
+            </button>
+        </div>
+        
+        <div id="adminPanel" class="admin-container" style="display:none;">
+            <h2 class="section-title">
+                <i class="fas fa-tachometer-alt"></i> Panel de Control
+            </h2>
+            
+            <!-- Alertas -->
+            <div id="alertMessage" class="alert" style="display:none;"></div>
+            
+            <!-- Tabs -->
+            <div class="tabs">
+                <div class="tab active" data-tab="usuarios" onclick="cambiarTab('usuarios')">
+                    <i class="fas fa-users"></i> Usuarios
+                </div>
+                <div class="tab" data-tab="ventas" onclick="cambiarTab('ventas')">
+                    <i class="fas fa-ticket-alt"></i> Números Vendidos
+                </div>
+                <div class="tab" data-tab="instrucciones" onclick="cambiarTab('instrucciones')">
+                    <i class="fas fa-info-circle"></i> Instrucciones
+                </div>
+            </div>
+            
+            <!-- Tab: Usuarios -->
+            <div id="usuarios" class="tab-content active">
+                <h3><i class="fas fa-user-edit"></i> Gestión de Usuarios</h3>
+                <p>Aquí puedes ajustar los puntos de los usuarios manualmente.</p>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Email</th>
+                                <th>Nombre</th>
+                                <th>Puntos</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usuariosList">
+                            <!-- Los usuarios se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Tab: Ventas -->
+            <div id="ventas" class="tab-content">
+                <h3><i class="fas fa-chart-bar"></i> Reporte de Ventas</h3>
+                <div class="stat-card">
+                    <div id="resumenVentas">Cargando resumen...</div>
+                </div>
+                
+                <h4 style="margin-top:30px;">Detalle de Números Vendidos</h4>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Comprador (Email)</th>
+                                <th>Nombre</th>
+                                <th>Fecha Compra</th>
+                            </tr>
+                        </thead>
+                        <tbody id="numerosVendidosList">
+                            <!-- Los números vendidos se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Tab: Instrucciones -->
+            <div id="instrucciones" class="tab-content">
+                <h3><i class="fas fa-book"></i> Instrucciones para el Administrador</h3>
+                
+                <div class="instructions">
+                    <h4><i class="fas fa-whatsapp"></i> Proceso de Recarga</h4>
+                    <ol>
+                        <li>Usuarios envían comprobante de pago por WhatsApp</li>
+                        <li>Verifica el comprobante y el monto pagado</li>
+                        <li>En esta página, busca al usuario por email</li>
+                        <li>Ajusta sus puntos (ej: $10.000 = 100 puntos)</li>
+                        <li>Guarda la descripción: "Recarga por transferencia #123"</li>
+                    </ol>
+                </div>
+                
+                <div class="instructions">
+                    <h4><i class="fas fa-calculator"></i> Tarifas Sugeridas</h4>
+                    <ul>
+                        <li><strong>$1.000</strong> = 10 puntos (1 número)</li>
+                        <li><strong>$5.000</strong> = 50 puntos (5 números)</li>
+                        <li><strong>$10.000</strong> = 100 puntos (10 números)</li>
+                        <li><strong>$20.000</strong> = 200 puntos (20 números)</li>
+                    </ul>
+                </div>
+                
+                <div class="instructions">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Notas Importantes</h4>
+                    <ul>
+                        <li>Cada número cuesta <strong>10 puntos</strong></li>
+                        <li>Los puntos NO son reembolsables</li>
+                        <li>Mantén registro de todas las transacciones</li>
+                        <li>No compartas la contraseña de administrador</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para ajustar puntos -->
+    <div id="ajusteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-coins"></i> Ajustar Puntos</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Usuario:</label>
+                <p id="ajusteUsuarioEmail" style="font-weight:bold; padding:10px; background:#f5f5f5;"></p>
+                <input type="hidden" id="ajusteUsuarioId">
+            </div>
+            
+            <div class="form-group">
+                <label for="ajustePuntos">
+                    <i class="fas fa-plus-minus"></i> Puntos (positivo para sumar, negativo para restar)
+                </label>
+                <input type="number" id="ajustePuntos" placeholder="Ej: +100 o -50" step="10">
+            </div>
+            
+            <div class="form-group">
+                <label for="ajusteDescripcion">
+                    <i class="fas fa-file-alt"></i> Descripción
+                </label>
+                <input type="text" id="ajusteDescripcion" 
+                       placeholder="Ej: Recarga por transferencia, Bonificación, etc.">
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button onclick="aplicarAjustePuntos()" class="btn btn-primary">
+                    <i class="fas fa-check"></i> Aplicar Ajuste
+                </button>
+                <button class="btn btn-cancel">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/assets/app.js"></script>
+</body>
+</html>
+'@ | Out-File -FilePath public\admin.html -Encoding UTF8
