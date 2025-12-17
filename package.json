@@ -9,9 +9,7 @@
     "db:seed": "wrangler d1 execute rifasv2 --file=seed.sql --remote",
     "db:query": "wrangler d1 execute rifasv2"
   },
-  "dependencies": {
-    "cookie": "^0.6.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "wrangler": "^4.55.0"
   }
