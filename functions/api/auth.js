@@ -7,7 +7,7 @@ export async function onRequest(context) {
   
   console.log("📨 Petición a:", path, "Método:", request.method);
   
-  // LOGIN
+  // LOGIN (CORRECTO)
   if (path === '/api/login' && request.method === 'POST') {
     try {
       const data = await request.json();
@@ -39,8 +39,9 @@ export async function onRequest(context) {
     }
   }
   
-  // REGISTER
-  if (path === '/api/auth/register' && request.method === 'POST') {
+  // REGISTER (¡CORREGIR ESTA LÍNEA!)
+  // CAMBIAR: '/api/auth/register' → '/api/register'
+  if (path === '/api/register' && request.method === 'POST') {
     try {
       const data = await request.json();
       console.log("Register attempt:", data.email);
