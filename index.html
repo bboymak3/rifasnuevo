@@ -1,0 +1,219 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎟️ RIFAS NUEVO - Números 1 al 100</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+        header { background: linear-gradient(90deg, #1a237e, #311b92); color: white; padding: 30px; text-align: center; }
+        h1 { font-size: 2.8rem; margin-bottom: 10px; }
+        .subtitle { font-size: 1.2rem; opacity: 0.9; }
+        .stats-bar { display: flex; justify-content: space-around; background: #f8f9fa; padding: 20px; border-bottom: 3px solid #e0e0e0; flex-wrap: wrap; }
+        .stat-item { text-align: center; padding: 10px; }
+        .stat-value { font-size: 2.5rem; font-weight: bold; color: #1a237e; }
+        .stat-label { color: #666; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        .numbers-section { padding: 30px; }
+        .grid-title { text-align: center; margin-bottom: 25px; color: #333; font-size: 1.5rem; }
+        .numbers-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 10px; max-width: 800px; margin: 0 auto; }
+        @media (max-width: 768px) { .numbers-grid { grid-template-columns: repeat(5, 1fr); gap: 8px; } }
+        .number-item { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; border-radius: 10px; cursor: pointer; transition: all 0.2s; border: 3px solid transparent; }
+        .number-item.disponible { background: #4CAF50; color: white; border-color: #388E3C; }
+        .number-item.disponible:hover { background: #388E3C; transform: scale(1.05); box-shadow: 0 5px 15px rgba(76,175,80,0.4); }
+        .number-item.vendido { background: #F44336; color: white; border-color: #D32F2F; cursor: not-allowed; opacity: 0.8; }
+        .instructions { background: #f5f5f5; padding: 30px; margin: 30px; border-radius: 15px; border-left: 5px solid #4CAF50; }
+        .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-top: 20px; }
+        .step { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .step-number { display: inline-block; background: #1a237e; color: white; width: 35px; height: 35px; border-radius: 50%; text-align: center; line-height: 35px; margin-right: 10px; font-weight: bold; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 40px; border-radius: 20px; max-width: 500px; width: 90%; animation: modalAppear 0.3s; }
+        @keyframes modalAppear { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .numero-grande { font-size: 4rem; text-align: center; color: #4CAF50; margin: 20px 0; font-weight: bold; }
+        .pago-info { background: #e8f5e9; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        .pago-info p { margin: 10px 0; display: flex; justify-content: space-between; }
+        .pago-info strong { color: #1a237e; }
+        .admin-link { position: fixed; bottom: 20px; right: 20px; background: #FF9800; color: white; padding: 12px 20px; border-radius: 30px; text-decoration: none; font-weight: bold; box-shadow: 0 5px 15px rgba(255,152,0,0.4); transition: transform 0.3s; }
+        .admin-link:hover { transform: translateY(-3px); }
+        .alert { padding: 15px 20px; border-radius: 10px; margin: 20px 30px; display: none; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .whatsapp-btn { display: inline-block; background: #25D366; color: white; padding: 15px 30px; border-radius: 50px; text-decoration: none; font-weight: bold; margin-top: 20px; transition: transform 0.3s; }
+        .whatsapp-btn:hover { transform: scale(1.05); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎟️ RIFAS NUEVO</h1>
+            <p class="subtitle">Números del 1 al 100 | Pago por Pago Móvil</p>
+        </header>
+        
+        <div class="stats-bar">
+            <div class="stat-item"><div class="stat-value" id="totalNumeros">100</div><div class="stat-label">Números Totales</div></div>
+            <div class="stat-item"><div class="stat-value" id="disponiblesCount">100</div><div class="stat-label">Disponibles</div></div>
+            <div class="stat-item"><div class="stat-value" id="vendidosCount">0</div><div class="stat-label">Vendidos</div></div>
+            <div class="stat-item"><div class="stat-value">$10</div><div class="stat-label">Cada Número</div></div>
+        </div>
+        
+        <div id="alertMessage" class="alert"></div>
+        
+        <div class="numbers-section">
+            <h2 class="grid-title">🎯 SELECCIONA UN NÚMERO (1-100)</h2>
+            <p style="text-align:center; margin-bottom:25px; color:#666;">
+                <span style="color:#4CAF50;">● Verde = Disponible</span> | 
+                <span style="color:#F44336;">● Rojo = Vendido</span>
+            </p>
+            
+            <div id="numerosGrid" class="numbers-grid"></div>
+        </div>
+        
+        <div class="instructions">
+            <h2>📋 ¿CÓMO PARTICIPAR?</h2>
+            <div class="steps">
+                <div class="step"><span class="step-number">1</span><strong>Selecciona</strong><br>Elige tu número favorito del 1 al 100</div>
+                <div class="step"><span class="step-number">2</span><strong>Paga</strong><br>Transfiere $10 por Pago Móvil</div>
+                <div class="step"><span class="step-number">3</span><strong>Envía</strong><br>Compartir comprobante por WhatsApp</div>
+                <div class="step"><span class="step-number">4</span><strong>Confirma</strong><br>Tu número se marcará como reservado</div>
+            </div>
+            
+            <div style="text-align:center; margin-top:30px;">
+                <a href="https://wa.me/584167775771?text=Hola,%20quiero%20comprar%20un%20número%20de%20la%20rifa" 
+                   class="whatsapp-btn" target="_blank">📱 Contactar por WhatsApp</a>
+            </div>
+        </div>
+        
+        <div style="background:#1a237e; color:white; padding:30px; text-align:center;">
+            <h3>💳 DATOS PARA PAGO MÓVIL</h3>
+            <div style="background:rgba(255,255,255,0.1); padding:20px; border-radius:10px; margin:20px auto; max-width:500px;">
+                <p style="margin:10px 0;"><strong>Teléfono:</strong> 0416-777.57.71</p>
+                <p style="margin:10px 0;"><strong>Banco:</strong> Banco de Venezuela</p>
+                <p style="margin:10px 0;"><strong>Cédula:</strong> V-XX.XXX.XXX</p>
+                <p style="margin:10px 0; font-size:0.9em; opacity:0.8;"><em>Envía comprobante para confirmar tu número</em></p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="pagoModal" class="modal">
+        <div class="modal-content">
+            <div style="text-align:center;">
+                <h2>✅ CONFIRMAR NÚMERO</h2>
+                <div class="numero-grande" id="modalNumero">00</div>
+                
+                <div class="pago-info">
+                    <p><span>Número seleccionado:</span><strong id="modalNumeroText">#00</strong></p>
+                    <p><span>Precio:</span><strong>$10</strong></p>
+                    <p><span>Estado:</span><strong style="color:#4CAF50;">Disponible</strong></p>
+                </div>
+                
+                <div style="text-align:left; background:#fff3cd; padding:15px; border-radius:8px; margin:20px 0;">
+                    <h4>📱 Pasos para pagar:</h4>
+                    <ol style="margin-left:20px; margin-top:10px;">
+                        <li>Haz Pago Móvil a <strong>0416-777.57.71</strong></li>
+                        <li>Banco: <strong>Banco de Venezuela</strong></li>
+                        <li>Envía comprobante por WhatsApp</li>
+                        <li>Te confirmaremos tu número</li>
+                    </ol>
+                </div>
+                
+                <div style="display:flex; gap:10px; margin-top:25px;">
+                    <button onclick="cerrarModal()" style="flex:1; padding:12px; background:#666; color:white; border:none; border-radius:8px; cursor:pointer;">Cerrar</button>
+                    <a href="https://wa.me/584167775771?text=Hola,%20quiero%20comprar%20el%20número%20" 
+                       id="whatsappLink" target="_blank" style="flex:1; padding:12px; background:#25D366; color:white; text-align:center; border-radius:8px; text-decoration:none;">📱 Contactar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <a href="admin.html" class="admin-link">🔧 Panel Admin</a>
+    
+    <script>
+        let todosLosNumeros = [];
+        
+        async function cargarNumeros() {
+            try {
+                const response = await fetch('/api/numeros');
+                const data = await response.json();
+                if (data.success) {
+                    todosLosNumeros = data.numeros;
+                    renderizarNumeros();
+                    actualizarEstadisticas();
+                } else {
+                    mostrarAlerta('Error cargando números', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarAlerta('Error de conexión', 'error');
+            }
+        }
+        
+        function renderizarNumeros() {
+            const grid = document.getElementById('numerosGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            
+            todosLosNumeros.forEach(numero => {
+                const div = document.createElement('div');
+                div.className = 'number-item';
+                div.textContent = numero.id;
+                
+                if (numero.estado === 'vendido') {
+                    div.classList.add('vendido');
+                    div.title = `Vendido a: ${numero.telefono_comprador || 'No especificado'}`;
+                } else {
+                    div.classList.add('disponible');
+                    div.title = 'Disponible - Click para comprar';
+                    div.onclick = () => mostrarModalPago(numero.id);
+                }
+                
+                grid.appendChild(div);
+            });
+        }
+        
+        function actualizarEstadisticas() {
+            const total = todosLosNumeros.length;
+            const vendidos = todosLosNumeros.filter(n => n.estado === 'vendido').length;
+            const disponibles = total - vendidos;
+            document.getElementById('totalNumeros').textContent = total;
+            document.getElementById('vendidosCount').textContent = vendidos;
+            document.getElementById('disponiblesCount').textContent = disponibles;
+        }
+        
+        function mostrarModalPago(numeroId) {
+            const modal = document.getElementById('pagoModal');
+            const numeroElem = document.getElementById('modalNumero');
+            const numeroText = document.getElementById('modalNumeroText');
+            const whatsappLink = document.getElementById('whatsappLink');
+            
+            numeroElem.textContent = numeroId;
+            numeroText.textContent = `#${numeroId}`;
+            const mensaje = `Hola, quiero comprar el número ${numeroId} de la rifa`;
+            whatsappLink.href = `https://wa.me/584167775771?text=${encodeURIComponent(mensaje)}`;
+            modal.style.display = 'flex';
+        }
+        
+        function cerrarModal() {
+            document.getElementById('pagoModal').style.display = 'none';
+        }
+        
+        function mostrarAlerta(mensaje, tipo = 'info') {
+            const alertDiv = document.getElementById('alertMessage');
+            alertDiv.textContent = mensaje;
+            alertDiv.className = `alert alert-${tipo}`;
+            alertDiv.style.display = 'block';
+            setTimeout(() => { alertDiv.style.display = 'none'; }, 5000);
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎰 Rifa Simple iniciada');
+            cargarNumeros();
+            window.onclick = function(event) {
+                const modal = document.getElementById('pagoModal');
+                if (event.target === modal) cerrarModal();
+            };
+            setInterval(cargarNumeros, 30000);
+        });
+    </script>
+</body>
+</html>

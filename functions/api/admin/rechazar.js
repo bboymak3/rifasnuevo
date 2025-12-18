@@ -44,7 +44,7 @@ function getCurrentUser() {
 async function login(email, password) {
     mostrarLoading('Iniciando sesión...');
     try {
-        const response = await fetch(`${API_BASE}/auth/login`, {
+        const response = await fetch(`${API_BASE}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -75,7 +75,7 @@ async function login(email, password) {
 async function register(email, nombre, password) {
     mostrarLoading('Registrando usuario...');
     try {
-        const response = await fetch(`${API_BASE}/auth/register`, {
+        const response = await fetch(`${API_BASE}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, nombre, password })
