@@ -6,6 +6,3 @@ pages_build_output_dir = "./"
 binding = "DB"
 database_name = "rifasv2"
 database_id = "c9c7e308-6c71-49f9-8eff-7f80512d7dc0"
-
-[env.production]
-ADMIN_PASSWORD = "admin123"
